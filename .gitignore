@@ -1,0 +1,7 @@
+build
+*/*.swp
+*/**/*.swp
+.vscode
+*.code-workspace
+__pycache__
+*~
