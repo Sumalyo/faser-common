@@ -33,6 +33,6 @@ document:
     - echo "FOR THIS TO WORK YOU NEED TO HAVE THE DIRECTORIES PRESENT ON THE OTHER END"
     - cd ..
     - ls faser-common
-    - #xrdcopy -s -f -p -r daq root://eoshome.cern.ch//eos/user/f/faserdaq/www/faser-common/.
+    - echo xrdcopy -s -f -p -r daq root://eoshome.cern.ch//eos/user/f/faserdaq/www/faser-common/.
     - pwd
 
