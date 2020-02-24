@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(EventFormats)
-add_subdirectory(Exceptions)
 add_subdirectory(Logging)
+add_subdirectory(Exceptions)
+add_subdirectory(EventFormats)
+if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME))
+   add_subdirectory(tests)
+endif()
+
