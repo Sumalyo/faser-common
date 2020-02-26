@@ -4,8 +4,9 @@
 #include <stdexcept>
 #include <chrono>
 #include <vector>
+#include <iomanip>
 #include <map>
-
+#include <fstream>
 #include "Exceptions/Exceptions.hpp"
 
 using namespace std::chrono_literals;
@@ -45,13 +46,18 @@ namespace DAQFormats {
     EmptyFragment = 1<<8,
     DuplicateFragment = 1<<9
   };
-  
+
+  /** \brief This class define DAQ fragment header encapsulating raw data
+   *  from the experiment. Encoding/decoding and access functions are provided
+   */
+ 
   class EventFragment {
   public:
 
     EventFragment() = delete;
 
-    /// Sets up new fragment for a binary payload
+    /** \brief Constructor given a detector payload 
+     */
     EventFragment(uint8_t fragment_tag, uint32_t source_id,
 		  uint64_t event_id, uint16_t bc_id, const void * payload, size_t payloadsize ) {
       microseconds timestamp;
@@ -72,7 +78,8 @@ namespace DAQFormats {
 			  reinterpret_cast<const uint8_t *>(payload)+payloadsize);
     }
   
-    /// Sets up fragment from array of bytes
+    /** \brief Constructor given an already encoded fragment
+     */
     EventFragment(const uint8_t *data,size_t size, bool allowExcessData=false) {
       if (size<8) THROW(EFormatException,"Too little data for fragment header");
       const struct EventFragmentHeader* newHeader=reinterpret_cast<const struct EventFragmentHeader*>(data);
@@ -85,20 +92,17 @@ namespace DAQFormats {
       if (size<newHeader->header_size+newHeader->payload_size) THROW(EFormatException,"Too little data for fragment");
       if ((size!=newHeader->header_size+newHeader->payload_size)&&!allowExcessData) THROW(EFormatException,"fragment size does not match header information");
       size=newHeader->header_size+newHeader->payload_size;
-      fragment=byteVector(data+newHeader->header_size,data+size);
+      fragment=byteVector(data+newHeader->header_size,data+newHeader->header_size+newHeader->payload_size);
       header=*(reinterpret_cast<const struct EventFragmentHeader *>(data));
     }
 
-    /// Sets up fragment from binary blob
-    //EventFragment(const Binary & frag) : EventFragment(frag.data<uint8_t*>(),frag.size()) {}
-
-    /// Returns the payload
+    /// \brief Returns the payload as pointer of desired type
     template <typename T = void *> T payload() const {
       static_assert(std::is_pointer<T>(), "Type parameter must be a pointer type");
       return reinterpret_cast<T>(fragment.data());
     }
   
-    /// Return raw fragment 
+    /// Return fragment as vector of bytes
     const byteVector * raw() const {
       const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
       byteVector* data=new byteVector(rawHeader,rawHeader+sizeof(header));
@@ -106,6 +110,7 @@ namespace DAQFormats {
       return data;
     }
 
+    /// Append fragment to existing vector of bytes (for building events)
     void rawAppend(byteVector *data) const {
       const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
       data->insert(data->end(),rawHeader,rawHeader+sizeof(header));
@@ -152,8 +157,15 @@ namespace DAQFormats {
     byteVector fragment;
   };
 
+    /** \brief This class define DAQ event header encapsulating one or more
+     *	event fragments. Encoding/decoding and access functions are provided
+     */
+
   class EventFull {
   public:
+    /** \brief Constructor with fragments to be added later
+     */
+
     EventFull(uint8_t event_tag, unsigned int run_number,uint64_t event_number) {
       microseconds timestamp;
       timestamp = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -173,7 +185,7 @@ namespace DAQFormats {
       header.timestamp      = timestamp.count();
     }
 
-    /// Sets up fragment from array of bytes
+    /// \brief Constructor given an existing event in stream of bytes 
     EventFull(const uint8_t *data,size_t eventsize) {
       if (eventsize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
       header=*reinterpret_cast<const struct EventHeader *>(data);
@@ -195,10 +207,41 @@ namespace DAQFormats {
       }
     }
 
+    /// \brief Constructor reading an existing event from a file stream
+    // FIXME: no format migration support or for partially corrupted events
+    EventFull(std::ifstream &in) {
+      in.read(reinterpret_cast<char *>(&header),sizeof(header));
+      if (in.fail()) THROW(EFormatException,"Too small to be event");
+      if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
+      if (header.version_number!=EventVersionLatest) {
+	//should do conversion here
+	THROW(EFormatException,"Unsupported event format version");
+      }
+      if (header.payload_size>1000000) THROW(EFormatException,"Payload size too large (>1000000)");
+      uint8_t* data=new uint8_t[header.payload_size];
+      uint8_t* full=data;
+      in.read(reinterpret_cast<char *>(data),header.payload_size);
+      if (in.fail()) THROW(EFormatException,"Event size does not match header information");
+
+      uint32_t dataLeft=header.payload_size;
+
+      for(int fragNum=0;fragNum<header.fragment_count;fragNum++) {
+	EventFragment *fragment=new EventFragment(data,dataLeft,true);
+	data+=fragment->size();
+	dataLeft-=fragment->size();
+	fragments[fragment->source_id()]=fragment;
+      }
+      delete [] full;
+    }
+
+
+
+    /// OR's new error flags into existing ones
     void updateStatus(uint16_t status) {
       header.status|=status;
     }
 
+    /// Return full event as vector of bytes
     byteVector* raw() {
       const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
       byteVector* full=new byteVector(rawHeader,rawHeader+sizeof(header));
@@ -209,12 +252,16 @@ namespace DAQFormats {
     }
 
     ~EventFull() {
-      for(const auto& frag: fragments) {
+      for(const auto& frag: fragments) { // FIXME: should use smarter pointers for memory management
 	delete frag.second;
       }
     }
+    /** \brief Appends fragment to list of fragments in event
+     *
+     *  Ownership is taken of fragment, i.e. don't delete it later
+     */
 
-    int16_t addFragment(const EventFragment* fragment) { //takes ownership of fragment memory, see above, BP: should use unique ptrs or something
+    int16_t addFragment(const EventFragment* fragment) { // FIXME: should use smarter pointers for memory management
       int16_t status=0;
       if (fragments.find(fragment->source_id())!=fragments.end()) 
 	THROW(EFormatException,"Duplicate fragment addition!");
@@ -234,11 +281,13 @@ namespace DAQFormats {
       updateStatus(fragment->status()|status);
       return status;
     }
+
+    // getters here
     uint8_t event_tag() const { return header.event_tag; }
     uint8_t status() const { return header.status; }
     uint64_t event_id() const { return header.event_id; }
     uint64_t event_counter() const { return header.event_counter; }
-    uint64_t bc_id() const { return header.bc_id; }
+    uint16_t bc_id() const { return header.bc_id; }
     uint32_t size() const { return header.header_size+header.payload_size; }
     uint32_t payload_size() const { return header.payload_size; }
     uint64_t timestamp() const { return header.timestamp; }
@@ -246,6 +295,16 @@ namespace DAQFormats {
     uint16_t trigger_bits() const { return header.trigger_bits; }
     uint16_t fragment_count() const { return header.fragment_count; }
 
+    /// Get list of fragment source ids
+    std::vector<uint32_t> getFragmentIDs() {
+      std::vector<uint32_t> ids;
+      for(const auto & frag : fragments) {
+	ids.push_back(frag.first);
+      }
+      return ids;
+    }
+    
+    /// Find fragment with specific source id
     const EventFragment* find_fragment(uint32_t source_id) const {
       if (fragments.find(source_id)==fragments.end()) return nullptr;
       return fragments.find(source_id)->second;
@@ -273,3 +332,30 @@ namespace DAQFormats {
   };
 
 }
+
+inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFragment &frag) {
+  out<<" Fragment: tag="<<static_cast<int>(frag.fragment_tag())
+     <<" source=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<std::hex<<frag.source_id()
+     <<" bc="<<std::dec<<std::setfill(' ')<<std::setw(4)<<frag.bc_id()
+     <<" status=0x"<<std::hex<<std::setw(4)<<std::setfill('0')<<frag.status()
+     <<" payload="<<std::dec<<std::setfill(' ')<<std::setw(5)<<frag.payload_size()
+     <<" bytes";
+    return out;
+}
+
+inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull &ev) {
+    out<<"Event: "<<std::setw(8)<<ev.event_counter()<<" (0x"<<std::hex<<std::setfill('0') <<std::setw(8)<<ev.event_id()<<") "
+       <<std::setfill(' ')
+       <<" tag="<<std::dec<<static_cast<int>(ev.event_tag())
+       <<" bc="<<std::dec<<std::setw(4)<<ev.bc_id()
+       <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<ev.trigger_bits()
+       <<" status=0x"<<std::hex<<std::setw(4)<<static_cast<int>(ev.status())
+       <<std::setfill(' ')
+       <<" time="<<std::dec<<ev.timestamp()  //FIXME: should be readable
+       <<" #fragments="<<ev.fragment_count()
+       <<" payload="<<std::dec<<std::setw(6)<<ev.payload_size()
+       <<" bytes";
+    return out;
+}
+
+
