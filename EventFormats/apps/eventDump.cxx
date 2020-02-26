@@ -3,7 +3,7 @@
 
 using namespace DAQFormats;
 
-void usage() {
+static void usage() {
    std::cout<<"Usage: eventDump [-f] [-d] <filename>"<<std::endl;
    exit(1);
 }
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 	    case PMTSourceID:
 	    default:
 	      const uint32_t* payload=frag->payload<const uint32_t *>();
-	      int ii=0;
+	      unsigned int ii=0;
 	      for(;ii<frag->payload_size()/4;ii++) {
 		if (ii%8==0) std::cout<<" ";
 		std::cout<<" 0x"<<std::setw(8)<<std::hex<<std::setfill('0')<<payload[ii];

@@ -73,7 +73,7 @@ namespace DAQFormats {
       header.event_id       = event_id;
       header.bc_id          = bc_id;
       header.status         = 0;
-      header.timestamp      = timestamp.count();
+      header.timestamp      = static_cast<uint64_t>(timestamp.count());
       fragment=byteVector(reinterpret_cast<const uint8_t *>(payload),
 			  reinterpret_cast<const uint8_t *>(payload)+payloadsize);
     }
@@ -182,7 +182,7 @@ namespace DAQFormats {
       header.event_counter  = event_number;
       header.bc_id          = 0xFFFF;
       header.status         = 0;
-      header.timestamp      = timestamp.count();
+      header.timestamp      = static_cast<uint64_t>(timestamp.count());
     }
 
     /// \brief Constructor given an existing event in stream of bytes 
