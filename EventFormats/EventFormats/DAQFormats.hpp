@@ -23,7 +23,12 @@ namespace DAQFormats {
     PhysicsTag = 0x00,
     CalibrationTag = 0x01,
     MonitoringTag = 0x02,
-    TLBMonitoringTag = 0x03
+    TLBMonitoringTag = 0x03,
+    MaxRegularTag = 0x03,  //  to be updated if new tags are added!
+    CorruptedTag = 0x10,
+    IncompleteTag = 0x11,
+    DuplicateTag = 0x12,
+    MaxAnyTag = 0x13       //  to be updated if new error tags are added! Note that is last tag value+1 !
   };
 
   enum SourceIDs {
@@ -44,7 +49,8 @@ namespace DAQFormats {
     DummyFragment = 1<<6,
     MissingFragment = 1<<7,  
     EmptyFragment = 1<<8,
-    DuplicateFragment = 1<<9
+    DuplicateFragment = 1<<9,
+    ErrorFragment = 1<<10    // used by event builder to wrap incoming non-deciphable data
   };
 
   /** \brief This class define DAQ fragment header encapsulating raw data
@@ -125,6 +131,11 @@ namespace DAQFormats {
     /// Set trigger bits
     void set_trigger_bits(uint16_t trigger_bits) {
       header.trigger_bits = trigger_bits;
+    } 
+
+    /// Set fragment tag - should normally not be used
+    void set_fragment_tag(uint8_t fragment_tag) {
+      header.fragment_tag = fragment_tag;
     } 
 
     //getters here
