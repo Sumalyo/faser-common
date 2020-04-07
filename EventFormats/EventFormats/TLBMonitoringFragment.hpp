@@ -1,61 +1,112 @@
 #pragma once
+#include <cstring> //memcpy, memset
+#include "Exceptions/Exceptions.hpp"
+
+#define MONITORING_HEADER 0xFEAD0050
+
+using namespace Exceptions;
 
 struct TLBMonitoringFragment { 
+
+  TLBMonitoringFragment( const uint32_t *data, size_t size ) {
+    m_size = size;
+    m_debug = false;
+    event.m_event_id = 0xffffff;
+    event.m_orbit_id = 0xffffffff;
+    event.m_bc_id = 0xffff;
+    memset(event.m_tbp, 0, sizeof(event.m_tbp));
+    memset(event.m_tap, 0, sizeof(event.m_tap));
+    memset(event.m_tav, 0, sizeof(event.m_tav));
+    event.m_deadtime_veto_counter = 0xffffff;
+    event.m_busy_veto_counter = 0xffffff;
+    event.m_rate_limiter_veto_counter = 0xffffff;
+    event.m_bcr_veto_counter = 0xffffff;
+    memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
+  }
+
+  bool valid() const {
+    if (m_size==sizeof(TLBMonEvent) && header()== MONITORING_HEADER ) return true;
+    return false;
+  }
+
   public:
     // getters
-    uint32_t header() const { return m_header; }
-    uint32_t event_id() const { return m_event_id; }
-    uint32_t orbit_id() const { return m_orbit_id; }
-    uint32_t bc_id() const { return m_bc_id; }
-    uint32_t tbp0() const { return m_tbp0; }
-    uint32_t tbp1() const { return m_tbp1; }
-    uint32_t tbp2() const { return m_tbp2; }
-    uint32_t tbp3() const { return m_tbp3; }
-    uint32_t tbp4() const { return m_tbp4; }
-    uint32_t tbp5() const { return m_tbp5; }
-    uint32_t tap0() const { return m_tap0; }
-    uint32_t tap1() const { return m_tap1; }
-    uint32_t tap2() const { return m_tap2; }
-    uint32_t tap3() const { return m_tap3; }
-    uint32_t tap4() const { return m_tap4; }
-    uint32_t tap5() const { return m_tap5; }
-    uint32_t tav0() const { return m_tav0; }
-    uint32_t tav1() const { return m_tav1; }
-    uint32_t tav2() const { return m_tav2; }
-    uint32_t tav3() const { return m_tav3; }
-    uint32_t tav4() const { return m_tav4; }
-    uint32_t tav5() const { return m_tav5; }
-    uint32_t deadtime_veto_counter() const { return m_deadtime_veto_counter; }
-    uint32_t busy_veto_counter() const { return m_busy_veto_counter; }
-    uint32_t rate_limiter_veto_counter() const { return m_rate_limiter_veto_counter; }
-    uint32_t bcr_veto_counter() const { return m_bcr_veto_counter; }
+    uint32_t header() const { return event.m_header; }
+    uint32_t event_id() const { return event.m_event_id; }
+    uint32_t orbit_id() const {
+      if ( valid() || m_debug )  return event.m_orbit_id;
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t bc_id() const { return event.m_bc_id; }
+    uint32_t tbp( uint8_t trig_line ) const { 
+      if ( valid() || m_debug ) return *(event.m_tbp+trig_line);
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t tap( uint8_t trig_line ) const { 
+      if ( valid() || m_debug ) return *(event.m_tap+trig_line);
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t tav( uint8_t trig_line ) const { 
+      if ( valid() || m_debug ) return *(event.m_tav+trig_line);
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t deadtime_veto_counter() const {
+      if ( valid() || m_debug )  return event.m_deadtime_veto_counter;
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t busy_veto_counter() const {
+      if ( valid() || m_debug )  return event.m_busy_veto_counter;
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t rate_limiter_veto_counter() const {
+      if ( valid() || m_debug )  return event.m_rate_limiter_veto_counter;
+      THROW(BaseException, "Data not valid");
+    }
+    uint32_t bcr_veto_counter() const {
+      if ( valid() || m_debug )  return event.m_bcr_veto_counter;
+      THROW(BaseException, "Data not valid");
+    }
+    size_t size() const { return m_size; }
+    //setters
+    void set_debug_on( bool debug = true ) { m_debug = debug; }
 
   private:
-    uint32_t m_header;
-    uint32_t m_event_id;
-    uint32_t m_orbit_id;
-    uint32_t m_bc_id;
-    uint32_t m_tbp0;
-    uint32_t m_tbp1;
-    uint32_t m_tbp2;
-    uint32_t m_tbp3;
-    uint32_t m_tbp4;
-    uint32_t m_tbp5;
-    uint32_t m_tap0;
-    uint32_t m_tap1;
-    uint32_t m_tap2;
-    uint32_t m_tap3;
-    uint32_t m_tap4;
-    uint32_t m_tap5;
-    uint32_t m_tav0;
-    uint32_t m_tav1;
-    uint32_t m_tav2;
-    uint32_t m_tav3;
-    uint32_t m_tav4;
-    uint32_t m_tav5;
-    uint32_t m_deadtime_veto_counter;
-    uint32_t m_busy_veto_counter;
-    uint32_t m_rate_limiter_veto_counter;
-    uint32_t m_bcr_veto_counter;
+    struct TLBMonEvent {
+      uint32_t m_header;
+      uint32_t m_event_id;
+      uint32_t m_orbit_id;
+      uint32_t m_bc_id;
+      uint32_t m_tbp[6];
+      uint32_t m_tap[6];
+      uint32_t m_tav[6];
+      uint32_t m_deadtime_veto_counter;
+      uint32_t m_busy_veto_counter;
+      uint32_t m_rate_limiter_veto_counter;
+      uint32_t m_bcr_veto_counter;
+    }  __attribute__((__packed__)) event;
+    size_t m_size;
+    bool m_debug;
 }  __attribute__((__packed__));
 
+inline std::ostream &operator<<(std::ostream &out, const TLBMonitoringFragment &event) {
+  try {
+    out
+    <<" event_id: "<<event.event_id()
+    <<", orbit_id: "<<event.orbit_id()
+    <<", bc_id:    "<<event.bc_id() << std::endl;
+    for (unsigned i = 0; i < 6; i++ ){
+      out<<"\ttbp"<<i<<": "<<std::setw(24)<<event.tbp(i)<<std::setfill(' ')
+         <<"\ttap"<<i<<": "<<std::setw(24)<<event.tap(i)<<std::setfill(' ')
+         <<"\ttav"<<i<<": "<<std::setw(24)<<event.tav(i)<<std::setfill(' ')<<std::endl;}
+    out<<" deadtime veto count: "<< event.deadtime_veto_counter()
+    <<", busy veto count: "<< event.busy_veto_counter()
+    <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
+    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl;
+  } catch ( BaseException& e ) {
+    out<<e.what()<<std::endl;
+    out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
+    out<<"Fragment size is "<<event.size()<<std::endl;
+  }
+
+ return out;
+}

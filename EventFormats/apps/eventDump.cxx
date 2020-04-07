@@ -1,5 +1,7 @@
 #include "EventFormats/DAQFormats.hpp"
 #include <unistd.h>
+#include "EventFormats/TLBDataFragment.hpp"
+#include "EventFormats/TLBMonitoringFragment.hpp"
 
 using namespace DAQFormats;
 
@@ -34,6 +36,7 @@ int main(int argc, char **argv) {
     std::cout << "ERROR: can't open file "<<filename<<std::endl;
     return 1;
   }
+
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
@@ -44,8 +47,19 @@ int main(int argc, char **argv) {
 	  std::cout<<*frag<<std::endl;
 	  if (showData) {
 	    switch (frag->source_id()&0xFFFF0000) {
-	    case TriggerSourceID: //FIXME put in specific 
-	    case TrackerSourceID:
+	    case TriggerSourceID:
+              if (event.event_tag() == PhysicsTag ) {
+                TLBDataFragment tlb_data_frag = TLBDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"TLB data fragment:"<<std::endl;
+                std::cout<<tlb_data_frag<<std::endl;
+              }
+              else if (event.event_tag() == TLBMonitoringTag ) {
+                TLBMonitoringFragment tlb_mon_frag = TLBMonitoringFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"TLB monitoring fragment:"<<std::endl;
+                std::cout<<tlb_mon_frag<<std::endl;
+              }
+              break;
+	    case TrackerSourceID: //FIXME put in specific 
 	    case PMTSourceID:
 	    default:
 	      const uint32_t* payload=frag->payload<const uint32_t *>();
