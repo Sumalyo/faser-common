@@ -4,7 +4,7 @@
 
 #define MONITORING_HEADER 0xFEAD0050
 
-using namespace Exceptions;
+class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 struct TLBMonitoringFragment { 
 
@@ -35,36 +35,36 @@ struct TLBMonitoringFragment {
     uint32_t event_id() const { return event.m_event_id; }
     uint32_t orbit_id() const {
       if ( valid() || m_debug )  return event.m_orbit_id;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t bc_id() const { return event.m_bc_id; }
     uint32_t tbp( uint8_t trig_line ) const { 
       if ( valid() || m_debug ) return *(event.m_tbp+trig_line);
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t tap( uint8_t trig_line ) const { 
       if ( valid() || m_debug ) return *(event.m_tap+trig_line);
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t tav( uint8_t trig_line ) const { 
       if ( valid() || m_debug ) return *(event.m_tav+trig_line);
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t deadtime_veto_counter() const {
       if ( valid() || m_debug )  return event.m_deadtime_veto_counter;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t busy_veto_counter() const {
       if ( valid() || m_debug )  return event.m_busy_veto_counter;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t rate_limiter_veto_counter() const {
       if ( valid() || m_debug )  return event.m_rate_limiter_veto_counter;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     uint32_t bcr_veto_counter() const {
       if ( valid() || m_debug )  return event.m_bcr_veto_counter;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBMonException, "Data not valid");
     }
     size_t size() const { return m_size; }
     //setters
@@ -102,10 +102,10 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonitoringFragment &
     <<", busy veto count: "<< event.busy_veto_counter()
     <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
     <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl;
-  } catch ( BaseException& e ) {
+  } catch ( TLBMonException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
-    out<<"Fragment size is "<<event.size()<<std::endl;
+    out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
   }
 
  return out;

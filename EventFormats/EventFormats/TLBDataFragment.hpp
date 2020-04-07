@@ -5,7 +5,7 @@
 
 #define TRIGGER_HEADER 0xFEAD000A
 
-using namespace Exceptions;
+class TLBDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 struct TLBDataFragment { 
   
@@ -33,24 +33,24 @@ struct TLBDataFragment {
     uint32_t event_id() const { return event.m_event_id; }
     uint32_t orbit_id() const {
       if ( valid() || m_debug )  return event.m_orbit_id;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBDataException, "Data not valid");
     }
     uint32_t bc_id() const { return event.m_bc_id; }
     uint8_t  tap() const {
       if ( valid() || m_debug )  return event.m_tap;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBDataException, "Data not valid");
     }
     uint8_t  tbp() const {
       if ( valid() || m_debug )  return event.m_tbp;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBDataException, "Data not valid");
     }
     uint8_t  input_bits() const {
       if ( valid() || m_debug )  return event.m_input_bits;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBDataException, "Data not valid");
     }
     uint8_t  input_bits_next_clk() const {
       if ( valid() || m_debug )  return event.m_input_bits_next_clk;
-      THROW(BaseException, "Data not valid");
+      THROW(TLBDataException, "Data not valid");
     }
     size_t size() const { return m_size; }
     //setters
@@ -81,10 +81,10 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event)
     <<std::setw(22)<<" TAV: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<6>(event.tbp())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" input_bits: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" input_bits_next_clk: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits_next_clk())<<std::setfill(' ')<<std::endl;
-  } catch ( BaseException& e ) {
+  } catch ( TLBDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
-    out<<"Fragment size is "<<event.size()<<std::endl;
+    out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
   }
 
  return out;
