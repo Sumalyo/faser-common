@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
     std::cout << "ERROR: can't open file "<<filename<<std::endl;
     return 1;
   }
-
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
