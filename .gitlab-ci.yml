@@ -60,7 +60,7 @@ test_decoder_tlb:
     - diff output ../EventFormats/apps/ReferenceOutput/ref_tlb
   artifacts:
     paths:
-    - output
+    - build/output
     expire_in: 1 week
     
 test_decoder_digitizer:
@@ -82,7 +82,7 @@ test_decoder_digitizer:
     - diff output ../EventFormats/apps/ReferenceOutput/ref_digitizer
   artifacts:
     paths:
-    - output
+    - build/output
     expire_in: 1 week
     
 
