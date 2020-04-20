@@ -1,21 +1,8 @@
 stages:
   - build
+  - test
   - document
-
-build_faser_daq:
-  stage: build
-  image: gitlab-registry.cern.ch/faser/docker/daq:master
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-  script:
-    - ls
-    - pwd
-    - source setup.sh
-    - mkdir -p build 
-    - cd build
-    - cmake3 ../
-    - make -j8
-    
+  
 # creation of doxygen documentation
 document:
   stage: document
@@ -35,4 +22,68 @@ document:
     - ls faser-common
     - echo xrdcopy -s -f -p -r faser-common root://eoshome.cern.ch//eos/user/f/faserdaq/www/faser-common/.
     - pwd
+
+build_faser_common:
+  stage: build
+  image: gitlab-registry.cern.ch/faser/docker/daq:master
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  script:
+    - ls
+    - pwd
+    - source setup.sh
+    - mkdir -p build 
+    - cd build
+    - cmake3 ../
+    - make -j8
+  artifacts:
+    paths:
+    - build
+    expire_in: 1 week
+    
+test_decoder_tlb:
+  stage: test
+  image: gitlab-registry.cern.ch/faser/docker/daq:master
+  dependencies:
+    - build_faser_common
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - echo $SERVICE_PASS | kinit $CERN_USER@CERN.CH
+  script:
+    - ls
+    - pwd
+    - source setup.sh 
+    - cd build
+    - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_April16/TLBDigitizer_lockdownsetup_200Hz_signal_coincidencePrescale1_input1Prescale2_20Hz_random_1Hz_monitoring/Faser-Physics-000000-00000.raw Faser-Physics-000000-00000.raw 
+    - ./EventFormats/eventDump -f -d TLB -n 1 Faser-Physics-000000-00000.raw > output
+    - diff output ../EventFormats/apps/ReferenceOutput/ref_tlb
+  artifacts:
+    paths:
+    - output
+    expire_in: 1 week
+    
+test_decoder_digitizer:
+  stage: test
+  image: gitlab-registry.cern.ch/faser/docker/daq:master
+  dependencies:
+    - build_faser_common
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  before_script:
+    - echo $SERVICE_PASS | kinit $CERN_USER@CERN.CH
+  script:
+    - ls
+    - pwd
+    - source setup.sh 
+    - cd build
+    - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_April16/TLBDigitizer_lockdownsetup_200Hz_signal_coincidencePrescale1_input1Prescale2_20Hz_random_1Hz_monitoring/Faser-Physics-000000-00000.raw Faser-Physics-000000-00000.raw 
+    - ./EventFormats/eventDump -f -d Digitizer -n 1 Faser-Physics-000000-00000.raw > output
+    - diff output ../EventFormats/apps/ReferenceOutput/ref_digitizer
+  artifacts:
+    paths:
+    - output
+    expire_in: 1 week
+    
+
 

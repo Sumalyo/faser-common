@@ -12,28 +12,68 @@ static void usage() {
 }
 
 int main(int argc, char **argv) {
+
+  // argument parsing
   if(argc<2) usage();
+
   bool showFragments=false;
   bool showData=false;
+  bool showTLB=false;
+  bool showTRB=false;
+  bool showDigitizer=false;
   int nEventsMax = -1;
   int opt;
-  while ( (opt = getopt(argc, argv, "fdn:")) != -1 ) {  
+  while ( (opt = getopt(argc, argv, "fd:n:")) != -1 ) {  
     switch ( opt ) {
     case 'f':
+      std::cout<<"DumpingFragments ... "<<std::endl;
       showFragments = true;
       break;
     case 'd':
+      std::cout<<"DumpingData ..."<<std::endl;
+      if(optarg==NULL)
+        std::cout<<"DumpingData : NULL"<<std::endl;
+      else
+        std::cout<<"DumpingData : "<<optarg<<std::endl;
       showFragments = true;
       showData = true;
+      if(optarg==NULL){
+        std::cout<<"No systems specified - printing all"<<std::endl;
+        showTLB=true;
+        showTRB=true;
+        showDigitizer=true;
+      }
+      else{
+        std::string systems = optarg;
+        std::cout<<"DumpingData select systems : "<<systems<<std::endl;
+        if(systems.find("TLB")==0){
+          showTLB=true;
+        }
+        if(systems.find("TRB")==0){
+          showTRB=true;
+        }
+        if(systems.find("Digitizer")==0){
+          showDigitizer=true;
+        }
+      }
+      std::cout<<"DumpingData TLB       : "<<showTLB<<std::endl;
+      std::cout<<"DumpingData TRB       : "<<showTRB<<std::endl;
+      std::cout<<"DumpingData Digitizer : "<<showDigitizer<<std::endl;
       break;
     case 'n':
+      std::cout<<"Specifying Nvents : "<<optarg<<std::endl;
       nEventsMax = std::atoi(optarg);
+      break;
+    case ':':
+      std::cout<<"Missing optopt : "<<optopt<<std::endl;
       break;
     case '?':  // unknown option...
       usage();
       break;
     }
   }
+
+  
   
   std::string filename(argv[optind]);
   std::ifstream in(filename, std::ios::binary);
@@ -55,23 +95,27 @@ int main(int argc, char **argv) {
         if (showData) {
           switch (frag->source_id()&0xFFFF0000) {
           case TriggerSourceID:
-            if (event.event_tag() == PhysicsTag ) {
-              TLBDataFragment tlb_data_frag = TLBDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-              std::cout<<"TLB data fragment:"<<std::endl;
-              std::cout<<tlb_data_frag<<std::endl;
-            }
-            else if (event.event_tag() == TLBMonitoringTag ) {
-              TLBMonitoringFragment tlb_mon_frag = TLBMonitoringFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-              std::cout<<"TLB monitoring fragment:"<<std::endl;
-              std::cout<<tlb_mon_frag<<std::endl;
+            if(showData && showTLB){
+              if (event.event_tag() == PhysicsTag ) {
+                TLBDataFragment tlb_data_frag = TLBDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"TLB data fragment:"<<std::endl;
+                std::cout<<tlb_data_frag<<std::endl;
+              }
+              else if (event.event_tag() == TLBMonitoringTag ) {
+                TLBMonitoringFragment tlb_mon_frag = TLBMonitoringFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"TLB monitoring fragment:"<<std::endl;
+                std::cout<<tlb_mon_frag<<std::endl;
+              }
             }
             break;
           case TrackerSourceID: //FIXME put in specific 
           case PMTSourceID:
-            if (event.event_tag() == PhysicsTag ) {
-              DigitizerDataFragment digitizer_data_frag = DigitizerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-              std::cout<<"TLB data fragment:"<<std::endl;
-              std::cout<<digitizer_data_frag<<std::endl;
+            if(showData && showDigitizer){
+              if (event.event_tag() == PhysicsTag ) {
+                DigitizerDataFragment digitizer_data_frag = DigitizerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"TLB data fragment:"<<std::endl;
+                std::cout<<digitizer_data_frag<<std::endl;
+              }
             }
             break;
           default:

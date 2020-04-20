@@ -49,7 +49,6 @@ struct DigitizerDataFragment {
     // count the number of active channels
     int n_channels_active=0;
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
-      std::cout<<iChan<<"  "<<GetBit(event.channel_mask,iChan)<<std::endl;
       if( GetBit(event.channel_mask,iChan)==1 )
         n_channels_active++;
     }
