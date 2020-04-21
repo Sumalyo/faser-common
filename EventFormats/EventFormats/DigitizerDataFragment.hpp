@@ -2,12 +2,13 @@
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
+#include "Logging.hpp"
 
 #define N_MAX_CHAN 16
 
 #define CERR std::cout<<__LINE__<<std::endl;
 
-int GetBit(unsigned int word, int bit_location){
+static inline int GetBit(unsigned int word, int bit_location){
   // obtain the value of a particular bit in a word
   word =  (word>>bit_location);
   word &= 0x1;
@@ -21,18 +22,12 @@ struct DigitizerDataFragment {
   DigitizerDataFragment( const uint32_t *data, size_t size ) {
     m_size = size;
     
-    if(m_debug){
-      const uint32_t* payload=data;
-      unsigned int ii=0;
-      for(;ii<size/4;ii++) {
-        if (ii%8==0) std::cout<<" ";
-        std::cout<<" 0x"<<std::setw(8)<<std::hex<<std::setfill('0')<<payload[ii];
-        if (ii%8==7) std::cout<<std::endl;
-      }
-      if (ii%8!=0) std::cout<<std::endl;
-      std::cout<<std::dec<<std::setfill(' ');
+    // is there at least a header
+    if( sizeof(data)/4 >= 4 ){
+      ERROR("Cannot find a header with at least 4 32 bit words");
+      THROW(DigitizerDataException, "The fragment is not big enough to even be a header");
     }
-
+    
     // decode header
     event.event_size            = data[0] & 0x0FFFFFFF;
     event.board_id              = data[1] >> 27;
@@ -41,6 +36,15 @@ struct DigitizerDataFragment {
     event.channel_mask          = (data[1] & 0x000000FF) || ((data[2] & 0xFF000000) >> 16);
     event.event_counter         = data[2] & 0x00FFFFFF;
     event.trigger_time_tag      = data[3];
+
+    // check the consistency of the apparent size of the event and the size recorded in the payload
+    // note that you need to multiply by 4 because the size is given in bytes of 8 bits but the event size is encoded
+    // as the number of 32 bit words
+    if( (event.event_size*4) != size ){
+      ERROR("Expected and observed size of payload do not agree");
+      ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
+      THROW(DigitizerDataException, "Mismatch in payload size and expected size");
+    }
     
     // parse the ADC count data
     // subtract 4 for the header to get the size of the data payload
@@ -54,6 +58,11 @@ struct DigitizerDataFragment {
     }
 
     // divide modified event size by number of channels
+    if(eSizeMod%n_channels_active != 0){
+      ERROR("The amount of data and the number of channels are not divisible");
+      ERROR("DataLength = "<<eSizeMod<<"  /  NChannels = "<<n_channels_active);
+      THROW(DigitizerDataException, "Mismatch in data length and number of enabled channels");
+    }
     int words_per_channel = eSizeMod/n_channels_active;
 
     // there are two readings per word
@@ -74,11 +83,14 @@ struct DigitizerDataFragment {
         // two readings are stored in one word
         unsigned int chData = data[iDat];
 
-        unsigned int ev0    = (chData & 0xFFFF0000) >> 16;  // first half of event doublet
-        unsigned int ev1    = (chData & 0x0000FFFF);        // second half of event doublet
+        // the data is actually arranged in a perhaps nonintuitive way
+        // the top half of the word is actually the second made in this doublet
+        // while the bottom half of the word is the first measurement
+        unsigned int adccount_second_measurement    = (chData & 0xFFFF0000) >> 16;  // sample[n+1]
+        unsigned int adccount_first_measurement     = (chData & 0x0000FFFF);        // sample[n]
 
-        event.adc_counts[iChan].push_back(ev1);
-        event.adc_counts[iChan].push_back(ev0);
+        event.adc_counts[iChan].push_back(adccount_first_measurement );
+        event.adc_counts[iChan].push_back(adccount_second_measurement );
 
       }
 
@@ -89,10 +101,10 @@ struct DigitizerDataFragment {
   
   }
 
-//  bool valid() const {
-//    if (m_size==sizeof(DigitizerEvent) && header()== TRIGGER_HEADER ) return true;
-//    return false;
-//  }
+  bool valid() const {
+    if (m_size==sizeof(DigitizerEvent) ) return true;
+    return false;
+  }
 
   public:
     // getters
@@ -104,11 +116,26 @@ struct DigitizerDataFragment {
     uint32_t event_counter() const { return event.event_counter; }
     uint32_t trigger_time_tag() const { return event.trigger_time_tag; }
     int n_samples() const { return event.n_samples; }
-    std::map<int, std::vector<float> > adc_counts() const { return event.adc_counts; }
-//    uint8_t  input_bits_next_clk() const {
-//      if ( valid() || m_debug )  return event.m_input_bits_next_clk;
-//      THROW(DigitizerDataException, "Data not valid");
-//    }
+    std::map<int, std::vector<uint16_t> > adc_counts() const { return event.adc_counts; }
+    const std::vector<uint16_t>& channel_adc_counts(int channel) const {
+    
+      // verify that the channel requested is in the channel mask
+      if( GetBit(event.channel_mask, channel)==0 ){
+        ERROR("You are requested data for a channel for which reading was not enabled at data takeing according to the channel mask.");
+        ERROR("Channel = "<<channel);
+        THROW(DigitizerDataException, "This channel is not enabled");
+      }
+      
+      // verify that the channel requested is in the map of adc counts
+      if( event.adc_counts.find(channel)==event.adc_counts.end()){
+        ERROR("You are requested data for a channel for which there is no entry in the adc counts map.");
+        ERROR("Channel = "<<channel);
+        THROW(DigitizerDataException, "This channel is not in the map");
+      }
+      
+      return event.adc_counts.find(channel)->second;
+    
+    }
     size_t size() const { return m_size; }
     //setters
     void set_debug_on( bool debug = true ) { m_debug = debug; }
@@ -125,11 +152,11 @@ struct DigitizerDataFragment {
       uint32_t trigger_time_tag;
       
       int n_samples;
-      std::map<int, std::vector<float> > adc_counts;
-    }  __attribute__((__packed__)) event;
+      std::map<int, std::vector<uint16_t> > adc_counts;
+    } event;
     size_t m_size; // number of words in full fragment
     bool m_debug = false;
-}  __attribute__((__packed__));
+};
 
 inline std::ostream &operator<<(std::ostream &out, const DigitizerDataFragment &event) {
   try {

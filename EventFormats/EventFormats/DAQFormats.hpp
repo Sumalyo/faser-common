@@ -86,7 +86,7 @@ namespace DAQFormats {
   
     /** \brief Constructor given an already encoded fragment
      */
-    EventFragment(const uint8_t *data,size_t size, bool allowExcessData=false) {
+    EventFragment(const uint8_t *data, size_t size, bool allowExcessData=false) {
       if (size<8) THROW(EFormatException,"Too little data for fragment header");
       const struct EventFragmentHeader* newHeader=reinterpret_cast<const struct EventFragmentHeader*>(data);
       if (newHeader->marker!=FragmentMarker) THROW(EFormatException,"No fragment header");

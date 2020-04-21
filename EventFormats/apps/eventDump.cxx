@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
             if(showData && showDigitizer){
               if (event.event_tag() == PhysicsTag ) {
                 DigitizerDataFragment digitizer_data_frag = DigitizerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-                std::cout<<"TLB data fragment:"<<std::endl;
+                std::cout<<"Digitizer data fragment:"<<std::endl;
                 std::cout<<digitizer_data_frag<<std::endl;
               }
             }
