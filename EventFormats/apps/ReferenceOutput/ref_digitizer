@@ -9,7 +9,7 @@ Specifying Nvents : 1
 Event:        1 (0x00000001)  tag=0 bc=62001 trig=0x0000 status=0x0002 time=1587033069069921 #fragments=2 payload=  1368 bytes
  Fragment: tag=0 source=0x20000 bc=1998 status=0x0000 payload=   20 bytes
  Fragment: tag=0 source=0x40000 bc=62001 status=0x0000 payload= 1276 bytes
-TLB data fragment:
+Digitizer data fragment:
 Digitizer Fragment
         event_size:                                        13f
         board_id:                                            6
