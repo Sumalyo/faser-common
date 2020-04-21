@@ -23,8 +23,9 @@ struct DigitizerDataFragment {
     m_size = size;
     
     // is there at least a header
-    if( sizeof(data)/4 >= 4 ){
+    if( size < 16 ){
       ERROR("Cannot find a header with at least 4 32 bit words");
+      ERROR("Data size : "<<size)
       THROW(DigitizerDataException, "The fragment is not big enough to even be a header");
     }
     
