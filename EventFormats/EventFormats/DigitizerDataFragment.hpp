@@ -117,16 +117,16 @@ struct DigitizerDataFragment {
     // have the same length
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
       // only check enabled channels
-      if( event.channel_has_data(iChan) ){
-        if( event.adc_counts[iChan].size()!=event.n_samples){
+      if( this->channel_has_data(iChan) ){
+        if( this->channel_adc_counts(iChan).size()!=event.n_samples){
           ERROR("The number of samples for channel="<<iChan<<" is not as expected");
-          ERROR("Expected="<<event.n_samples<<"  Actual="<<event.adc_counts[iChan].size()<<std::endl);
+          ERROR("Expected="<<event.n_samples<<"  Actual="<<this->channel_adc_counts(iChan).size()<<std::endl);
           validityFlag = false;
         }
       }
     }
   
-    return validityFlag
+    return validityFlag;
   }
 
   public:
