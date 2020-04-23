@@ -49,7 +49,7 @@ struct DigitizerDataFragment {
     
     // parse the ADC count data
     // subtract 4 for the header to get the size of the data payload
-    int eSizeMod = event.event_size-4;
+    int event_size_no_header = event.event_size-4;
 
     // count the number of active channels
     int n_channels_active=0;
@@ -59,12 +59,12 @@ struct DigitizerDataFragment {
     }
 
     // divide modified event size by number of channels
-    if(eSizeMod%n_channels_active != 0){
+    if(event_size_no_header%n_channels_active != 0){
       ERROR("The amount of data and the number of channels are not divisible");
-      ERROR("DataLength = "<<eSizeMod<<"  /  NChannels = "<<n_channels_active);
+      ERROR("DataLength = "<<event_size_no_header<<"  /  NChannels = "<<n_channels_active);
       THROW(DigitizerDataException, "Mismatch in data length and number of enabled channels");
     }
-    int words_per_channel = eSizeMod/n_channels_active;
+    int words_per_channel = event_size_no_header/n_channels_active;
 
     // there are two readings per word
     int samples_per_channel = 2*words_per_channel;
@@ -75,11 +75,14 @@ struct DigitizerDataFragment {
     int current_start_location = 4;
     
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
+        
+      // make an empty vector entry for the data for every channel, regardless of whether it was enabled
+      event.adc_counts[iChan] = {};
+      
+      // only fill it if it is enabled
       if( GetBit(event.channel_mask,iChan)==0 )
         continue;
-        
-      // make an empty vector entry for the data
-      event.adc_counts[iChan] = {};
+      
       for(int iDat=current_start_location; iDat<current_start_location+words_per_channel; iDat++){
         // two readings are stored in one word
         unsigned int chData = data[iDat];
@@ -98,13 +101,32 @@ struct DigitizerDataFragment {
       // move the starting location to the start of the next channels data
       current_start_location += words_per_channel;
     }
-  
-  
+      
   }
 
+  // to check the validity of the data object for readback after decoding
   bool valid() const {
-    if (m_size==sizeof(DigitizerEvent) ) return true;
-    return false;
+    bool validityFlag = true; // assume innocence until proven guilty
+  
+    // check global event size
+    if (m_size!=sizeof(DigitizerEvent) ){
+      validityFlag = false;
+    }
+  
+    // perform check to ensure that the decoded readouts, for active channels
+    // have the same length
+    for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
+      // only check enabled channels
+      if( event.channel_has_data(iChan) ){
+        if( event.adc_counts[iChan].size()!=event.n_samples){
+          ERROR("The number of samples for channel="<<iChan<<" is not as expected");
+          ERROR("Expected="<<event.n_samples<<"  Actual="<<event.adc_counts[iChan].size()<<std::endl);
+          validityFlag = false;
+        }
+      }
+    }
+  
+    return validityFlag
   }
 
   public:
@@ -122,20 +144,19 @@ struct DigitizerDataFragment {
     
       // verify that the channel requested is in the channel mask
       if( GetBit(event.channel_mask, channel)==0 ){
-        ERROR("You are requested data for a channel for which reading was not enabled at data takeing according to the channel mask.");
-        ERROR("Channel = "<<channel);
-        THROW(DigitizerDataException, "This channel is not enabled");
+        INFO("You have requesting data for channel "<<channel<<" for which reading was not enabled at data taking according to the channel mask.");
       }
       
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
-        ERROR("You are requested data for a channel for which there is no entry in the adc counts map.");
-        ERROR("Channel = "<<channel);
-        THROW(DigitizerDataException, "This channel is not in the map");
+        INFO("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
       }
       
       return event.adc_counts.find(channel)->second;
     
+    }
+    bool channel_has_data(int channel) const {
+      return GetBit(event.channel_mask, channel);
     }
     size_t size() const { return m_size; }
     //setters
@@ -177,11 +198,11 @@ inline std::ostream &operator<<(std::ostream &out, const DigitizerDataFragment &
     }
     out<<std::endl;
     
-    // print data
+    // print data after checking that channels were enabled
     for(int iSamp=0; iSamp<event.n_samples(); iSamp++){
       out<<std::setw(10)<<std::dec<<iSamp<<"|";
       for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
-        if( GetBit(event.channel_mask(), iChan)==1 ){
+        if( event.channel_has_data(iChan) ){
           out<<std::setw(9)<<std::dec<<event.adc_counts()[iChan].at(iSamp);
         }
         else{
