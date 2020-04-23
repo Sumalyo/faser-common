@@ -8,6 +8,8 @@
 
 #define CERR std::cout<<__LINE__<<std::endl;
 
+/*! A test class */
+
 static inline int GetBit(unsigned int word, int bit_location){
   // obtain the value of a particular bit in a word
   word =  (word>>bit_location);
@@ -18,7 +20,10 @@ static inline int GetBit(unsigned int word, int bit_location){
 class DigitizerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 struct DigitizerDataFragment { 
-  
+
+////////////////////////////////////////////////////
+/// Constructor for creating a parsed digitizer event fragment
+////////////////////////////////////////////////////  
   DigitizerDataFragment( const uint32_t *data, size_t size ) {
     m_size = size;
     
@@ -104,7 +109,15 @@ struct DigitizerDataFragment {
       
   }
 
-  // to check the validity of the data object for readback after decoding
+////////////////////////////////////////////////////
+/// Check the validity of the fragment that has been parsed
+/// 
+/// This checks the following
+/// - The full fragment size is as expected and matches the size that the fragment
+///   in the EventPayload finds
+/// - The number of samples in all channels with event data (as specified in the
+///   channel mask) have the same number of samples
+////////////////////////////////////////////////////
   bool valid() const {
     bool validityFlag = true; // assume innocence until proven guilty
   
@@ -130,41 +143,97 @@ struct DigitizerDataFragment {
   }
 
   public:
-    // getters
+////////////////////////////////////////////////////
+/// Retrieves the total size of the event, including the header.  This should be equal to :
+/// - 4 words for the header
+/// - N*(M/2) words for the readout data where N is the number of channels enabled for readout and M is the length of the buffer
+////////////////////////////////////////////////////
     uint32_t event_size() const { return event.event_size; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the hardware board identifier
+////////////////////////////////////////////////////
     uint32_t board_id() const { return event.board_id; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the board failure flag (a single bit) which should be set to 0 if everything is fine
+/// and is set to 1 in the case of a hardware issue (e.g. PLL unlock).  
+////////////////////////////////////////////////////
     uint32_t board_fail_flag() const { return event.board_fail_flag; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the 16 bit pattern that was on the LVDS I/O flat cable upon the trigger reception
+////////////////////////////////////////////////////
     uint32_t pattern_trig_options() const { return event.pattern_trig_options; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the channel mask that specifies which channels were enabled for readout in a given event.
+/// This data can also be accessed via the channel_has_data() method
+////////////////////////////////////////////////////
     uint32_t channel_mask() const { return event.channel_mask; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the local event counter of all triggered events
+////////////////////////////////////////////////////
     uint32_t event_counter() const { return event.event_counter; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the Trigger Time Tag
+////////////////////////////////////////////////////
     uint32_t trigger_time_tag() const { return event.trigger_time_tag; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the number of samples in the buffer for a single channel
+////////////////////////////////////////////////////
     int n_samples() const { return event.n_samples; }
+    
+////////////////////////////////////////////////////
+/// Retrieves a copy of the full ADC count structure for all channels. This is available for completeness
+/// but it is recommended to retrieve data from a single channel at a time using the channel_adc_counts()
+/// function which simply provides a reference 
+////////////////////////////////////////////////////
     std::map<int, std::vector<uint16_t> > adc_counts() const { return event.adc_counts; }
+    
+////////////////////////////////////////////////////
+/// Retrieves the data for a single channel, regardless of whether that channel was enabled for reading.
+/// If it was not enabled, it will print a WARNING to the screen but proceed to give you empty data.
+////////////////////////////////////////////////////
     const std::vector<uint16_t>& channel_adc_counts(int channel) const {
     
       // verify that the channel requested is in the channel mask
       if( GetBit(event.channel_mask, channel)==0 ){
-        INFO("You have requesting data for channel "<<channel<<" for which reading was not enabled at data taking according to the channel mask.");
+        WARNING("You have requesting data for channel "<<channel<<" for which reading was not enabled at data taking according to the channel mask.");
       }
       
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
-        INFO("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
+        WARNING("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
       }
       
       return event.adc_counts.find(channel)->second;
     
     }
+    
+////////////////////////////////////////////////////
+/// Helper function to let you determine if a given channel has data stored after decoding the event
+////////////////////////////////////////////////////
     bool channel_has_data(int channel) const {
       return GetBit(event.channel_mask, channel);
     }
+    
+////////////////////////////////////////////////////
+/// Retrieves the size of the full event fragment, including the header as the number of 8 bit words
+////////////////////////////////////////////////////
     size_t size() const { return m_size; }
-    //setters
+    
+////////////////////////////////////////////////////
+/// Sets the debug flag to on for the decoding object
+////////////////////////////////////////////////////
     void set_debug_on( bool debug = true ) { m_debug = debug; }
 
   private:
     struct DigitizerEvent {
-      uint32_t event_size;
+      uint32_t event_size;   /// The total size of the event including the header
       uint32_t board_id;
       bool     board_fail_flag;
       bool     event_format; // should always be 0
