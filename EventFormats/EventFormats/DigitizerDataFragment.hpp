@@ -120,12 +120,7 @@ struct DigitizerDataFragment {
 ////////////////////////////////////////////////////
   bool valid() const {
     bool validityFlag = true; // assume innocence until proven guilty
-  
-    // check global event size
-    if (m_size!=sizeof(DigitizerEvent) ){
-      validityFlag = false;
-    }
-  
+    
     // perform check to ensure that the decoded readouts, for active channels
     // have the same length
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
