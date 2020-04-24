@@ -194,11 +194,6 @@ struct DigitizerDataFragment {
 /// If it was not enabled, it will print a WARNING to the screen but proceed to give you empty data.
 ////////////////////////////////////////////////////
     const std::vector<uint16_t>& channel_adc_counts(int channel) const {
-    
-      // verify that the channel requested is in the channel mask
-      if( GetBit(event.channel_mask, channel)==0 ){
-        WARNING("You have requesting data for channel "<<channel<<" for which reading was not enabled at data taking according to the channel mask.");
-      }
       
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
