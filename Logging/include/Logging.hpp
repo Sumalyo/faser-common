@@ -15,11 +15,11 @@
 #pragma message "Compiled without DAQling logger"
 
 // Base log output - just printing to screen
-#define LOG(LEVEL,MSG) std::cout << "[" << LEVEL <<"] "			\
-  <<"(file = "<<std::left<<__FILE__<<")"				\
-  <<"(func = "<<std::left<<__FUNCTION__<<")"				\
-  <<"(line = "<<std::left<<__LINE__<<")"				\
-  <<" | "<< MSG << std::endl;						\
+#define LOG(LEVEL,MSG) std::cout << "[" << LEVEL <<"] " \
+                                 <<"(file = "<<std::left<<__FILE__<<")" \
+                                 <<"(func = "<<std::left<<__FUNCTION__<<")" \
+                                 <<"(line = "<<std::left<<__LINE__<<")" \
+                                 <<" | "<< MSG << std::endl; \
 
 // Log levels
 #define TRACE(MSG)    LOG("TRACE", MSG)
