@@ -197,7 +197,13 @@ struct DigitizerDataFragment {
       
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
-        WARNING("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
+        ERROR("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
+        THROW(DigitizerDataException, "The requested channel is not in the adc counts map.");
+      }
+      
+      // if they requested data from an empty channel, then tell them
+      if( GetBit(event.channel_mask, channel)==false ){
+        WARNING("You are requesting data for channel "<<channel<<" which was not enabled for reading in data taking.  Are you sure you want to use this?");
       }
       
       return event.adc_counts.find(channel)->second;
