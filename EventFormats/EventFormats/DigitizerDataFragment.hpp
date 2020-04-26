@@ -2,15 +2,15 @@
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
-#include "Logging.hpp"
+//#include "Logging.hpp"
 
 #define N_MAX_CHAN 16
 
-#define CERR std::cout<<__LINE__<<std::endl;
+//#define CERR std::cout<<__LINE__<<std::endl;
 
 /*! A test class */
 
-static inline int GetBit(unsigned int word, int bit_location){
+static inline unsigned int GetBit(unsigned int word, int bit_location){
   // obtain the value of a particular bit in a word
   word =  (word>>bit_location);
   word &= 0x1;
@@ -29,8 +29,8 @@ struct DigitizerDataFragment {
     
     // is there at least a header
     if( size < 16 ){
-      ERROR("Cannot find a header with at least 4 32 bit words");
-      ERROR("Data size : "<<size)
+      //      ERROR("Cannot find a header with at least 4 32 bit words");
+      //      ERROR("Data size : "<<size);
       THROW(DigitizerDataException, "The fragment is not big enough to even be a header");
     }
     
@@ -47,17 +47,17 @@ struct DigitizerDataFragment {
     // note that you need to multiply by 4 because the size is given in bytes of 8 bits but the event size is encoded
     // as the number of 32 bit words
     if( (event.event_size*4) != size ){
-      ERROR("Expected and observed size of payload do not agree");
-      ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
+      //      ERROR("Expected and observed size of payload do not agree");
+      //      ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
       THROW(DigitizerDataException, "Mismatch in payload size and expected size");
     }
     
     // parse the ADC count data
     // subtract 4 for the header to get the size of the data payload
-    int event_size_no_header = event.event_size-4;
+    unsigned int event_size_no_header = event.event_size-4;
 
     // count the number of active channels
-    int n_channels_active=0;
+    unsigned int n_channels_active=0;
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
       if( GetBit(event.channel_mask,iChan)==1 )
         n_channels_active++;
@@ -65,19 +65,19 @@ struct DigitizerDataFragment {
 
     // divide modified event size by number of channels
     if(event_size_no_header%n_channels_active != 0){
-      ERROR("The amount of data and the number of channels are not divisible");
-      ERROR("DataLength = "<<event_size_no_header<<"  /  NChannels = "<<n_channels_active);
+      //      ERROR("The amount of data and the number of channels are not divisible");
+      //      ERROR("DataLength = "<<event_size_no_header<<"  /  NChannels = "<<n_channels_active);
       THROW(DigitizerDataException, "Mismatch in data length and number of enabled channels");
     }
-    int words_per_channel = event_size_no_header/n_channels_active;
+    unsigned int words_per_channel = event_size_no_header/n_channels_active;
 
     // there are two readings per word
-    int samples_per_channel = 2*words_per_channel;
+    unsigned int samples_per_channel = 2*words_per_channel;
     event.n_samples = samples_per_channel;
 
     // location of pointer to start at begin of channel
     // starts at 4 because that is size of header
-    int current_start_location = 4;
+    unsigned int current_start_location = 4;
     
     for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
         
@@ -88,7 +88,7 @@ struct DigitizerDataFragment {
       if( GetBit(event.channel_mask,iChan)==0 )
         continue;
       
-      for(int iDat=current_start_location; iDat<current_start_location+words_per_channel; iDat++){
+      for(unsigned int iDat=current_start_location; iDat<current_start_location+words_per_channel; iDat++){
         // two readings are stored in one word
         unsigned int chData = data[iDat];
 
@@ -127,8 +127,8 @@ struct DigitizerDataFragment {
       // only check enabled channels
       if( this->channel_has_data(iChan) ){
         if( this->channel_adc_counts(iChan).size()!=event.n_samples){
-          ERROR("The number of samples for channel="<<iChan<<" is not as expected");
-          ERROR("Expected="<<event.n_samples<<"  Actual="<<this->channel_adc_counts(iChan).size()<<std::endl);
+	  //          ERROR("The number of samples for channel="<<iChan<<" is not as expected");
+	  //          ERROR("Expected="<<event.n_samples<<"  Actual="<<this->channel_adc_counts(iChan).size()<<std::endl);
           validityFlag = false;
         }
       }
@@ -180,7 +180,7 @@ struct DigitizerDataFragment {
 ////////////////////////////////////////////////////
 /// Retrieves the number of samples in the buffer for a single channel
 ////////////////////////////////////////////////////
-    int n_samples() const { return event.n_samples; }
+    unsigned int n_samples() const { return event.n_samples; }
     
 ////////////////////////////////////////////////////
 /// Retrieves a copy of the full ADC count structure for all channels. This is available for completeness
@@ -197,13 +197,13 @@ struct DigitizerDataFragment {
       
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
-        ERROR("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
+	//        ERROR("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
         THROW(DigitizerDataException, "The requested channel is not in the adc counts map.");
       }
       
       // if they requested data from an empty channel, then tell them
       if( GetBit(event.channel_mask, channel)==false ){
-        WARNING("You are requesting data for channel "<<channel<<" which was not enabled for reading in data taking.  Are you sure you want to use this?");
+	//        WARNING("You are requesting data for channel "<<channel<<" which was not enabled for reading in data taking.  Are you sure you want to use this?");
       }
       
       return event.adc_counts.find(channel)->second;
@@ -238,7 +238,7 @@ struct DigitizerDataFragment {
       uint32_t event_counter;
       uint32_t trigger_time_tag;
       
-      int n_samples;
+      unsigned int n_samples;
       std::map<int, std::vector<uint16_t> > adc_counts;
     } event;
     size_t m_size; // number of words in full fragment
@@ -264,7 +264,7 @@ inline std::ostream &operator<<(std::ostream &out, const DigitizerDataFragment &
     out<<std::endl;
     
     // print data after checking that channels were enabled
-    for(int iSamp=0; iSamp<event.n_samples(); iSamp++){
+    for(unsigned int iSamp=0; iSamp<event.n_samples(); iSamp++){
       out<<std::setw(10)<<std::dec<<iSamp<<"|";
       for(int iChan=0; iChan<N_MAX_CHAN; iChan++){
         if( event.channel_has_data(iChan) ){
