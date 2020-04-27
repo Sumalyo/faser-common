@@ -7,6 +7,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+macro(add_faser_executable name)
+    # Define the executable
+    add_executable(${name} ${ARGN})
+    if( EXISTS "${CMAKE_SOURCE_DIR}/daqling/src/Utils/Logging.hpp")
+
+    	# Add the required logging
+	target_sources(${name} PRIVATE "${CMAKE_SOURCE_DIR}/faser-common/Logging/src/Logger_impl.cpp")
+    	target_link_libraries(${name} zmq)
+    endif()
+endmacro()
+
+
 add_subdirectory(Logging)
 add_subdirectory(Exceptions)
 add_subdirectory(EventFormats)
