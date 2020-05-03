@@ -39,14 +39,17 @@ struct TLBMonitoringFragment {
     }
     uint32_t bc_id() const { return event.m_bc_id; }
     uint32_t tbp( uint8_t trig_line ) const { 
+      if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
       if ( valid() || m_debug ) return *(event.m_tbp+trig_line);
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t tap( uint8_t trig_line ) const { 
+      if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
       if ( valid() || m_debug ) return *(event.m_tap+trig_line);
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t tav( uint8_t trig_line ) const { 
+      if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
       if ( valid() || m_debug ) return *(event.m_tav+trig_line);
       THROW(TLBMonException, "Data not valid");
     }
@@ -71,14 +74,15 @@ struct TLBMonitoringFragment {
     void set_debug_on( bool debug = true ) { m_debug = debug; }
 
   private:
+    static const uint8_t max_trig_line = 6;
     struct TLBMonEvent {
       uint32_t m_header;
       uint32_t m_event_id;
       uint32_t m_orbit_id;
       uint32_t m_bc_id;
-      uint32_t m_tbp[6];
-      uint32_t m_tap[6];
-      uint32_t m_tav[6];
+      uint32_t m_tbp[max_trig_line];
+      uint32_t m_tap[max_trig_line];
+      uint32_t m_tav[max_trig_line];
       uint32_t m_deadtime_veto_counter;
       uint32_t m_busy_veto_counter;
       uint32_t m_rate_limiter_veto_counter;
@@ -86,7 +90,7 @@ struct TLBMonitoringFragment {
     }  __attribute__((__packed__)) event;
     size_t m_size;
     bool m_debug;
-}  __attribute__((__packed__));
+};
 
 inline std::ostream &operator<<(std::ostream &out, const TLBMonitoringFragment &event) {
   try {
