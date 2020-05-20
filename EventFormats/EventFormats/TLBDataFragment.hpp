@@ -69,7 +69,7 @@ struct TLBDataFragment {
     }  __attribute__((__packed__)) event;
     size_t m_size;
     bool m_debug;
-}  __attribute__((__packed__));
+};
 
 inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event) {
   try {
@@ -83,7 +83,7 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event)
     <<std::setw(22)<<" input_bits_next_clk: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits_next_clk())<<std::setfill(' ')<<std::endl;
   } catch ( TLBDataException& e ) {
     out<<e.what()<<std::endl;
-    out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
+    out<<"Corrupted data for TLB data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
   }
 
