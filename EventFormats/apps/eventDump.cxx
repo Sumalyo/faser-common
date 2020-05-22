@@ -7,7 +7,7 @@
 using namespace DAQFormats;
 
 static void usage() {
-   std::cout<<"Usage: eventDump [-f] [-d] [-n nEventsMax] <filename>"<<std::endl;
+   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] <filename>"<<std::endl;
    exit(1);
 }
 
@@ -49,11 +49,20 @@ int main(int argc, char **argv) {
         if(systems.find("TLB")==0){
           showTLB=true;
         }
-        if(systems.find("TRB")==0){
+        else if(systems.find("TRB")==0){
           showTRB=true;
         }
-        if(systems.find("Digitizer")==0){
+        else if(systems.find("Digitizer")==0){
           showDigitizer=true;
+        }
+        else if(systems.find("all")==0){
+          showTLB=true;
+          showTRB=true;
+          showDigitizer=true;
+        }
+        else {
+          std::cout<<"ERROR: Argument for -d is invalid "<<std::endl;
+          usage();
         }
       }
       std::cout<<"DumpingData TLB       : "<<showTLB<<std::endl;
@@ -74,7 +83,10 @@ int main(int argc, char **argv) {
   }
 
   
-  
+  if (optind >= argc) {
+    std::cout<<"ERROR: too few arguments given."<<std::endl;
+    usage();
+  }
   std::string filename(argv[optind]);
   std::ifstream in(filename, std::ios::binary);
   if (!in.is_open()){
