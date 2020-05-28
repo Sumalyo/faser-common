@@ -174,10 +174,12 @@ namespace DAQFormats {
 
   class EventFull {
   public:
+
     /** \brief Constructor with fragments to be added later
+     *  Default parameeters allow this to be used as a default constructor as well
      */
 
-    EventFull(uint8_t event_tag, unsigned int run_number,uint64_t event_number) {
+    EventFull(uint8_t event_tag=IncompleteTag, unsigned int run_number=0, uint64_t event_number=0) {
       microseconds timestamp;
       timestamp = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 
@@ -198,24 +200,16 @@ namespace DAQFormats {
 
     /// \brief Constructor given an existing event in stream of bytes 
     EventFull(const uint8_t *data,size_t eventsize) {
-      if (eventsize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
-      header=*reinterpret_cast<const struct EventHeader *>(data);
-      if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
-      if (header.version_number!=EventVersionLatest) {
-	//should do conversion here
-	THROW(EFormatException,"Unsupported event format version");
-      }
-      if (size()!=eventsize) THROW(EFormatException,"Event size does not match header information");
 
+      // Read EventHeader out of byte stream
+      loadHeader(data, eventsize);
+
+      uint32_t dataLeft = eventsize - header.header_size;
       data+=header.header_size;
-      uint32_t dataLeft=header.payload_size;
 
-      for(int fragNum=0;fragNum<header.fragment_count;fragNum++) {
-	EventFragment *fragment=new EventFragment(data,dataLeft,true);
-	data+=fragment->size();
-	dataLeft-=fragment->size();
-	fragments[fragment->source_id()]=fragment;
-      }
+      // Read payload objects from remaining data
+      loadPayload(data, dataLeft);
+
     }
 
     /// \brief Constructor reading an existing event from a file stream
@@ -291,6 +285,32 @@ namespace DAQFormats {
 
       updateStatus(fragment->status()|status);
       return status;
+    }
+
+    // \brief Load header from stream of bytes
+    void loadHeader(const uint8_t *data, size_t datasize) {
+      if (datasize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
+      header=*reinterpret_cast<const struct EventHeader *>(data);
+      if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
+      if (header.version_number!=EventVersionLatest) {
+	//should do conversion here
+	THROW(EFormatException,"Unsupported event format version");
+      }
+    }
+
+    // \brief Load payload from stream of bytes
+    void loadPayload(const uint8_t *data, size_t datasize) {
+
+      if (datasize != header.payload_size) {
+	THROW(EFormatException, "Payload size does not match header information");
+      }
+
+      for(int fragNum=0;fragNum<header.fragment_count;fragNum++) {
+	EventFragment *fragment=new EventFragment(data,datasize,true);
+	data+=fragment->size();
+	datasize-=fragment->size();
+	fragments[fragment->source_id()]=fragment;
+      }
     }
 
     // getters here
