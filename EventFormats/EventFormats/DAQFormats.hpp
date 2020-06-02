@@ -146,6 +146,7 @@ namespace DAQFormats {
     uint16_t status() const { return header.status; }
     uint16_t trigger_bits() const { return header.trigger_bits; }
     uint32_t size() const { return header.header_size+header.payload_size; }
+    uint16_t header_size() const { return header.header_size; }
     uint32_t payload_size() const { return header.payload_size; }
     uint64_t timestamp() const { return header.timestamp; }
     
@@ -204,6 +205,7 @@ namespace DAQFormats {
       // Read EventHeader out of byte stream
       loadHeader(data, eventsize);
 
+      // Skip forward by amount of data actually read
       uint32_t dataLeft = eventsize - header.header_size;
       data+=header.header_size;
 
@@ -288,7 +290,8 @@ namespace DAQFormats {
     }
 
     // \brief Load header from stream of bytes
-    void loadHeader(const uint8_t *data, size_t datasize) {
+    // Return actual size of header
+    uint16_t loadHeader(const uint8_t *data, size_t datasize) {
       if (datasize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
       header=*reinterpret_cast<const struct EventHeader *>(data);
       if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
@@ -296,6 +299,8 @@ namespace DAQFormats {
 	//should do conversion here
 	THROW(EFormatException,"Unsupported event format version");
       }
+
+      return header_size(); 
     }
 
     // \brief Load payload from stream of bytes
@@ -320,6 +325,7 @@ namespace DAQFormats {
     uint64_t event_counter() const { return header.event_counter; }
     uint16_t bc_id() const { return header.bc_id; }
     uint32_t size() const { return header.header_size+header.payload_size; }
+    uint16_t header_size() const { return header.header_size; }
     uint32_t payload_size() const { return header.payload_size; }
     uint64_t timestamp() const { return header.timestamp; }
     uint64_t run_number() const { return header.run_number; }
