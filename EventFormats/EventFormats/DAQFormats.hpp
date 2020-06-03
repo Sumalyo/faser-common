@@ -146,6 +146,7 @@ namespace DAQFormats {
     uint16_t status() const { return header.status; }
     uint16_t trigger_bits() const { return header.trigger_bits; }
     uint32_t size() const { return header.header_size+header.payload_size; }
+    uint16_t header_size() const { return header.header_size; }
     uint32_t payload_size() const { return header.payload_size; }
     uint64_t timestamp() const { return header.timestamp; }
     
@@ -174,10 +175,12 @@ namespace DAQFormats {
 
   class EventFull {
   public:
+
     /** \brief Constructor with fragments to be added later
+     *  Default parameeters allow this to be used as a default constructor as well
      */
 
-    EventFull(uint8_t event_tag, unsigned int run_number,uint64_t event_number) {
+    EventFull(uint8_t event_tag=IncompleteTag, unsigned int run_number=0, uint64_t event_number=0) {
       microseconds timestamp;
       timestamp = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 
@@ -198,24 +201,17 @@ namespace DAQFormats {
 
     /// \brief Constructor given an existing event in stream of bytes 
     EventFull(const uint8_t *data,size_t eventsize) {
-      if (eventsize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
-      header=*reinterpret_cast<const struct EventHeader *>(data);
-      if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
-      if (header.version_number!=EventVersionLatest) {
-	//should do conversion here
-	THROW(EFormatException,"Unsupported event format version");
-      }
-      if (size()!=eventsize) THROW(EFormatException,"Event size does not match header information");
 
+      // Read EventHeader out of byte stream
+      loadHeader(data, eventsize);
+
+      // Skip forward by amount of data actually read
+      uint32_t dataLeft = eventsize - header.header_size;
       data+=header.header_size;
-      uint32_t dataLeft=header.payload_size;
 
-      for(int fragNum=0;fragNum<header.fragment_count;fragNum++) {
-	EventFragment *fragment=new EventFragment(data,dataLeft,true);
-	data+=fragment->size();
-	dataLeft-=fragment->size();
-	fragments[fragment->source_id()]=fragment;
-      }
+      // Read payload objects from remaining data
+      loadPayload(data, dataLeft);
+
     }
 
     /// \brief Constructor reading an existing event from a file stream
@@ -293,6 +289,35 @@ namespace DAQFormats {
       return status;
     }
 
+    // \brief Load header from stream of bytes
+    // Return actual size of header
+    uint16_t loadHeader(const uint8_t *data, size_t datasize) {
+      if (datasize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
+      header=*reinterpret_cast<const struct EventHeader *>(data);
+      if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
+      if (header.version_number!=EventVersionLatest) {
+	//should do conversion here
+	THROW(EFormatException,"Unsupported event format version");
+      }
+
+      return header_size(); 
+    }
+
+    // \brief Load payload from stream of bytes
+    void loadPayload(const uint8_t *data, size_t datasize) {
+
+      if (datasize != header.payload_size) {
+	THROW(EFormatException, "Payload size does not match header information");
+      }
+
+      for(int fragNum=0;fragNum<header.fragment_count;fragNum++) {
+	EventFragment *fragment=new EventFragment(data,datasize,true);
+	data+=fragment->size();
+	datasize-=fragment->size();
+	fragments[fragment->source_id()]=fragment;
+      }
+    }
+
     // getters here
     uint8_t event_tag() const { return header.event_tag; }
     uint8_t status() const { return header.status; }
@@ -300,6 +325,7 @@ namespace DAQFormats {
     uint64_t event_counter() const { return header.event_counter; }
     uint16_t bc_id() const { return header.bc_id; }
     uint32_t size() const { return header.header_size+header.payload_size; }
+    uint16_t header_size() const { return header.header_size; }
     uint32_t payload_size() const { return header.payload_size; }
     uint64_t timestamp() const { return header.timestamp; }
     uint64_t run_number() const { return header.run_number; }
