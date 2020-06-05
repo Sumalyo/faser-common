@@ -3,6 +3,7 @@
 #include "EventFormats/TLBDataFragment.hpp"
 #include "EventFormats/TLBMonitoringFragment.hpp"
 #include "EventFormats/DigitizerDataFragment.hpp"
+#include "EventFormats/TrackerDataFragment.hpp"
 
 using namespace DAQFormats;
 
@@ -121,6 +122,12 @@ int main(int argc, char **argv) {
             }
             break;
           case TrackerSourceID: //FIXME put in specific 
+            if(showData && showTRB){
+              TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+              std::cout<<"Tracker data fragment:"<<std::endl;
+              std::cout<<tracker_data_frag<<std::endl;
+            }
+            break;
           case PMTSourceID:
             if(showData && showDigitizer){
               if (event.event_tag() == PhysicsTag ) {
