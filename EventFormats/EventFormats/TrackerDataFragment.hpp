@@ -1,6 +1,7 @@
 #pragma once
 #include <bitset>
 #include "Exceptions/Exceptions.hpp"
+#include <iomanip>
 
 class TrackerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
@@ -43,8 +44,10 @@ struct TrackerDataFragment {
 
 inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &event) {
   try {
-    out << " to dump TRB info here "
-    << std::endl;
+    out
+    <<std::setw(11)<<" event_id: "<<std::setfill(' ')<<std::setw(32)<<event.event_id()<<std::setfill(' ')<<std::endl
+    <<std::setw(11)<<" bc_id: "<<std::setfill(' ')<<std::setw(32)<<event.bc_id()<<std::setfill(' ')<<std::endl
+    <<std::endl;
   } catch ( TrackerDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for Tracker data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
