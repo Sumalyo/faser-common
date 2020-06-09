@@ -333,7 +333,7 @@ namespace DAQFormats {
     uint16_t fragment_count() const { return header.fragment_count; }
 
     /// Get list of fragment source ids
-    std::vector<uint32_t> getFragmentIDs() {
+    std::vector<uint32_t> getFragmentIDs() const {
       std::vector<uint32_t> ids;
       for(const auto & frag : fragments) {
 	ids.push_back(frag.first);
