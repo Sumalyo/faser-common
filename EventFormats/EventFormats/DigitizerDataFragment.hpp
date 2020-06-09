@@ -2,7 +2,7 @@
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
-#include "Logging.hpp"
+#include "Logging/Logging.hpp"
 
 #define N_MAX_CHAN 16
 
