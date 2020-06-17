@@ -39,7 +39,7 @@ struct DigitizerDataFragment {
     event.board_id              = data[1] >> 27;
     event.board_fail_flag       = GetBit(data[1], 26);
     event.pattern_trig_options  = (data[1] & 0x00FFFFFF) >> 8;
-    event.channel_mask          = (data[1] & 0x000000FF) || ((data[2] & 0xFF000000) >> 16);
+    event.channel_mask          = (data[1] & 0x000000FF) | ((data[2] & 0xFF000000) >> 16);
     event.event_counter         = data[2] & 0x00FFFFFF;
     event.trigger_time_tag      = data[3];
 
