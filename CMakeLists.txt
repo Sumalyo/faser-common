@@ -3,7 +3,7 @@ if(NOT DEFINED CMAKE_PROJECT_NAME)
   set(CMAKE_PROJECT_NAME "Unknown")
 endif()
 
-message("CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
+# message("CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
 
 if ("Calypso" STREQUAL ${CMAKE_PROJECT_NAME})
 # Calypso/athena build

@@ -1,17 +1,6 @@
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   # Calypso/Athena build
-
-  message("Logging: Calypso")
-
-  atlas_subdir(Logging)
-
-  atlas_add_library ( Logging
-    Logging/*.hpp
-    PUBLIC_HEADERS Logging
-  )
-
-  # Need this because there are no source files
-  set_target_properties(Logging PROPERTIES LINKER_LANGUAGE CXX)
+  # Do nothing, we will just include the Logging include in EventFormats path
 
 else()
   # Online build

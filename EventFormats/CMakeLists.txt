@@ -8,23 +8,18 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   atlas_depends_on_subdirs (
     PUBLIC
     Exceptions
-    PRIVATE
-    Logging
   )
 
   atlas_add_library ( EventFormats
-  		    EventFormats/*.hpp
+  		    EventFormats/*.hpp ../Logging/include
 		    PUBLIC_HEADERS EventFormats
-		    PRIVATE_INCLUDE_DIRS Logging
 		    LINK_LIBRARIES Exceptions 
-		    PRIVATE_LINK_LIBRARIES Logging
 		    )
 
   # Need this because there are no source files
   set_target_properties(EventFormats PROPERTIES LINKER_LANGUAGE CXX)
 
   atlas_add_executable( eventDump apps/eventDump.cxx 
-      PRIVATE_INCLUDE_DIRS Logging
       LINK_LIBRARIES EventFormats       
     )
 
