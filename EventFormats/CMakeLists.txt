@@ -11,8 +11,8 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   )
 
   atlas_add_library ( EventFormats
-  		    EventFormats/*.hpp ../Logging/include
-		    PUBLIC_HEADERS EventFormats
+  		    EventFormats/*.hpp ../Logging/include/*.hpp
+		    PUBLIC_HEADERS EventFormats 
 		    LINK_LIBRARIES Exceptions 
 		    )
 
@@ -20,7 +20,8 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   set_target_properties(EventFormats PROPERTIES LINKER_LANGUAGE CXX)
 
   atlas_add_executable( eventDump apps/eventDump.cxx 
-      LINK_LIBRARIES EventFormats       
+      LINK_LIBRARIES EventFormats
+      INCLUDE_DIRS ../Logging/include
     )
 
 else()
