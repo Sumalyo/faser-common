@@ -1,3 +1,5 @@
+message("CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
+
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
 # Calypso/athena build
 
