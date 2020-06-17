@@ -1,4 +1,6 @@
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
+  # Calypso/Athena build
+
   message("EventFormats: Calypso")
 
   atlas_subdir(EventFormats)
@@ -21,15 +23,13 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   # Need this because there are no source files
   set_target_properties(EventFormats PROPERTIES LINKER_LANGUAGE CXX)
 
-
   atlas_add_executable( eventDump apps/eventDump.cxx 
       PRIVATE_INCLUDE_DIRS Logging
-      LINK_LIBRARIES EventFormats 
-      
+      LINK_LIBRARIES EventFormats       
     )
 
-
 else()
+  # Online build
   add_library(EventFormats INTERFACE)
   target_include_directories(EventFormats INTERFACE ./)
   target_link_libraries(EventFormats INTERFACE Exceptions Logging)

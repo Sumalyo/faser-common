@@ -1,4 +1,6 @@
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
+  # Calypso/Athena build
+
   message("Exceptions: Calypso")
 
   atlas_subdir(Exceptions)
@@ -12,6 +14,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   set_target_properties(Exceptions PROPERTIES LINKER_LANGUAGE CXX)
 
 else()
+  # Online build
 
   add_library(Exceptions INTERFACE)
   target_include_directories(Exceptions INTERFACE ./)

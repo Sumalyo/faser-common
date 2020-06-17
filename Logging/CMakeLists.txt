@@ -1,4 +1,6 @@
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
+  # Calypso/Athena build
+
   message("Logging: Calypso")
 
   atlas_subdir(Logging)
@@ -12,6 +14,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   set_target_properties(Logging PROPERTIES LINKER_LANGUAGE CXX)
 
 else()
+  # Online build
 
   add_library(Logging INTERFACE)
 
