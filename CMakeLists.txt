@@ -1,3 +1,8 @@
+# Seems to be unset in CI
+if(NOT DEFINED CMAKE_PROJECT_NAME)
+  set(CMAKE_PROJECT_NAME Unknown)
+endif()
+
 message("CMAKE_PROJECT_NAME is ${CMAKE_PROJECT_NAME}")
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
