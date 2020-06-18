@@ -333,7 +333,7 @@ namespace DAQFormats {
     uint16_t fragment_count() const { return header.fragment_count; }
 
     /// Get list of fragment source ids
-    std::vector<uint32_t> getFragmentIDs() {
+    std::vector<uint32_t> getFragmentIDs() const {
       std::vector<uint32_t> ids;
       for(const auto & frag : fragments) {
 	ids.push_back(frag.first);
@@ -383,6 +383,7 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFragm
 inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull &ev) {
     out<<"Event: "<<std::setw(8)<<ev.event_counter()<<" (0x"<<std::hex<<std::setfill('0') <<std::setw(8)<<ev.event_id()<<") "
        <<std::setfill(' ')
+       <<" run="<<std::dec<<ev.run_number()
        <<" tag="<<std::dec<<static_cast<int>(ev.event_tag())
        <<" bc="<<std::dec<<std::setw(4)<<ev.bc_id()
        <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<ev.trigger_bits()
