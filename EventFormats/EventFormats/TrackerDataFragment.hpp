@@ -2,6 +2,7 @@
 #include <bitset>
 #include "Exceptions/Exceptions.hpp"
 #include <iomanip>
+#include <bitset>
 
 class TrackerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
@@ -13,6 +14,21 @@ struct TrackerDataFragment {
     event.m_event_id = 0xffffff;
     event.m_bc_id = 0xffff;
     // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
+    const uint32_t mask24 = 0x00FFFFFF;
+    const uint32_t mask12 = 0x00000FFF;
+std::cout << "Start of event" << std::endl;
+for (size_t i = 0; i < size/4; i++)
+{
+    std::bitset<32> binary(data[i]);
+    //std::cout << i  << " : " << binary  << std::endl;
+    switch(i){
+       case 0: event.m_event_id=data[i] & mask24; std::cout<<"Event stored:"<<data[i]<<std::endl; break;
+       case 1: event.m_bc_id=data[i] & mask12;    std::cout<<"BCID stored:" <<data[i]<<std::endl;break;
+             }
+}
+std::cout << "End of event" << std::endl;
+
+
   }
 
   bool valid() const {
