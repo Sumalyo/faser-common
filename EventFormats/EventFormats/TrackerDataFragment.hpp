@@ -3,6 +3,8 @@
 #include "Exceptions/Exceptions.hpp"
 #include <iomanip>
 #include <bitset>
+#include <map>
+
 
 class TrackerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
@@ -13,24 +15,60 @@ struct TrackerDataFragment {
     m_debug = false;
     event.m_event_id = 0xffffff;
     event.m_bc_id = 0xffff;
+
+    std::map<int,int>modDB;
     // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
-    const uint32_t mask24 = 0x00FFFFFF;
-    const uint32_t mask12 = 0x00000FFF;
-std::cout << "Start of event" << std::endl;
-for (size_t i = 0; i < size/4; i++)
-{
-    std::bitset<32> binary(data[i]);
-    //std::cout << i  << " : " << binary  << std::endl;
-    switch(i){
-       case 0: event.m_event_id=data[i] & mask24; std::cout<<"Event stored:"<<data[i]<<std::endl; break;
-       case 1: event.m_bc_id=data[i] & mask12;    std::cout<<"BCID stored:" <<data[i]<<std::endl;break;
-             }
+    const uint32_t errorMask   = 0x0000000F; //  4 bits
+    const uint32_t bcidMask    = 0x00000FFF; // 12 bits
+    const uint32_t payloadMask = 0x00FFFFFF; // 24 bits
+
+    for (size_t i=0; i<size/4;i++ )
+    {
+       int frameType = (data[i] & 0x3<<30)>>30;//(d & 0b111<<30)>>30;
+       int frameCounter=(data[i] & 0x7<<27)>>27;
+       int moduleOrInfo=(data[i] & 0x7<<24)>>24;
+       int payloadLength=24; //Change to be more general later?
+       int modNer=0; //mod ID in error message
+       int errId=(data[i]&0x15);
+       
+      // std::cout<<frameType<<" | "<<frameCounter<<std::endl;
+       
+       if (frameType==0)
+       { 
+         switch(moduleOrInfo)
+         {
+           case 0:event.m_event_id=data[i]&payloadMask; break;
+           case 1:
+                  
+                  std::cout<<"TRB ERROR: "<<errId<<std::endl; 
+                  event.m_trb_error_id=errId;
+                  break;
+           case 2:
+                  modNer=(data[i]&0x7<<24)>>24;
+                  event.m_module_error_ids.push_back( (modNer) << 4 | errId);
+                  std::cout<<"LED Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
+           case 3:
+                  modNer=(data[i]&0x7<<24)>>24;
+                  event.m_module_error_ids.push_back( (modNer) << 4 | errId);
+                  std::cout<<"LEDX Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
+
+         }
+
+       }
+       if (frameType==1 and moduleOrInfo==0){event.m_bc_id=data[i]&bcidMask;}
+       if (frameType==2)
+       {
+          int modN=moduleOrInfo;
+          modDB[modN]=data[i]&payloadMask;
+       }
+       if (frameType==3)
+       {
+          int modN=(moduleOrInfo+1)*10;
+          modDB[modN]=data[i]&payloadMask;
+       }
+    }
 }
-std::cout << "End of event" << std::endl;
-
-
-  }
-
+    
   bool valid() const {
     if (m_size<sizeof(event.m_event_id) ) return false; //example. Eventually to check dimensions of data, check for error ids.
     return true;
