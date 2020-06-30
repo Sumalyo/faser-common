@@ -16,7 +16,7 @@ struct TrackerDataFragment {
     event.m_event_id = 0xffffff;
     event.m_bc_id = 0xffff;
 
-    std::map<int,int>modDB;
+    std::map<int,uint64_t>modDB;
     // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
     const uint32_t errorMask   = 0x0000000F; //  4 bits
     const uint32_t bcidMask    = 0x00000FFF; // 12 bits
@@ -59,12 +59,24 @@ struct TrackerDataFragment {
        if (frameType==2)
        {
           int modN=moduleOrInfo;
-          modDB[modN]=data[i]&payloadMask;
+          if (modDB.count(modN)!=0)
+          {
+            int oldV = modDB[modN];
+            int newV = (oldV<<32)|(data[i]&payloadMask);
+	    modDB[modN]=newV;
+          }
+          else {modDB[modN]=data[i]&payloadMask;}
        }
        if (frameType==3)
        {
           int modN=(moduleOrInfo+1)*10;
-          modDB[modN]=data[i]&payloadMask;
+	  if (modDB.count(modN)!=0)
+          {
+            int oldV = modDB[modN];
+            int newV = (oldV<<32)|(data[i]&payloadMask);
+            modDB[modN]=newV;
+          }
+          else {modDB[modN]=data[i]&payloadMask;}
        }
     }
 }
