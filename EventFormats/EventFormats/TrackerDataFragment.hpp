@@ -69,7 +69,7 @@ struct TrackerDataFragment {
        }
        if (frameType==3)
        {
-          int modN=(moduleOrInfo+1)*10;
+          int modN=moduleOrInfo+10;
 	  if (modDB.count(modN)!=0)
           {
             int oldV = modDB[modN];
