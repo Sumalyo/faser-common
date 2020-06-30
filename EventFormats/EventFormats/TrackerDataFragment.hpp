@@ -16,7 +16,6 @@ struct TrackerDataFragment {
     event.m_event_id = 0xffffff;
     event.m_bc_id = 0xffff;
 
-    std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > modDB;
     // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
     const uint32_t errorMask   = 0x0000000F; //  4 bits
     const uint32_t bcidMask    = 0x00000FFF; // 12 bits
@@ -44,13 +43,10 @@ struct TrackerDataFragment {
                   event.m_trb_error_id=errId;
                   break;
            case 2:
-                  modNer=(data[i]&0x7<<24)>>24;
-                  event.m_module_error_ids.push_back( (modNer) << 4 | errId);
-                  std::cout<<"LED Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
            case 3:
                   modNer=(data[i]&0x7<<24)>>24;
-                  event.m_module_error_ids.push_back( (modNer) << 4 | errId);
-                  std::cout<<"LEDX Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
+                  event.m_module_error_ids.push_back((frameType%2)<<7 | (modNer) << 4 | errId);
+                  std::cout<<"LED(x) Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
 
          }
 
@@ -59,7 +55,7 @@ struct TrackerDataFragment {
 	if (frameType == 2 || frameType == 3)
 	{
 	     std::pair<uint8_t, uint8_t> key { moduleOrInfo , (frameType == 2 ? 0 : 1) };
-	     modDB[key].push_back(data[i] & payloadMask);
+	     event.m_modDB[key].push_back(data[i] & payloadMask);
 	}       
     }
 }
@@ -75,7 +71,8 @@ struct TrackerDataFragment {
     uint32_t bc_id() const { return event.m_bc_id; }
     size_t size() const { return m_size; }
     uint8_t trb_error_id() const { return event.m_trb_error_id;}
-    std::vector<uint8_t> module_error_id() const { return event.m_module_error_ids;}
+    std::vector<uint8_t>  module_error_id() const { return event.m_module_error_ids;}
+    std::map< std::pair<uint8_t, uint8_t>,std::vector<uint32_t> >  module_modDB() const {return  event.m_modDB;}
     //setters
     void set_debug_on( bool debug = true ) { m_debug = debug; }
 
@@ -85,6 +82,7 @@ struct TrackerDataFragment {
       uint32_t m_bc_id;
       uint8_t m_trb_error_id;
       std::vector< uint8_t > m_module_error_ids;
+      std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
       // std::vector < SCTEvents > m_hits_per_module; // SCTEvent to be implemented in 2nd step.
     }  event;
     size_t m_size;
