@@ -16,7 +16,7 @@ struct TrackerDataFragment {
     event.m_event_id = 0xffffff;
     event.m_bc_id = 0xffff;
 
-    std::map<int,uint64_t>modDB;
+    std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > modDB;
     // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
     const uint32_t errorMask   = 0x0000000F; //  4 bits
     const uint32_t bcidMask    = 0x00000FFF; // 12 bits
@@ -56,28 +56,11 @@ struct TrackerDataFragment {
 
        }
        if (frameType==1 and moduleOrInfo==0){event.m_bc_id=data[i]&bcidMask;}
-       if (frameType==2)
-       {
-          int modN=moduleOrInfo;
-          if (modDB.count(modN)!=0)
-          {
-            int oldV = modDB[modN];
-            int newV = (oldV<<32)|(data[i]&payloadMask);
-	    modDB[modN]=newV;
-          }
-          else {modDB[modN]=data[i]&payloadMask;}
-       }
-       if (frameType==3)
-       {
-          int modN=moduleOrInfo+10;
-	  if (modDB.count(modN)!=0)
-          {
-            int oldV = modDB[modN];
-            int newV = (oldV<<32)|(data[i]&payloadMask);
-            modDB[modN]=newV;
-          }
-          else {modDB[modN]=data[i]&payloadMask;}
-       }
+	if (frameType == 2 || frameType == 3)
+	{
+	     std::pair<uint8_t, uint8_t> key { moduleOrInfo , (frameType == 2 ? 0 : 1) };
+	     modDB[key].push_back(data[i] & payloadMask);
+	}       
     }
 }
     
