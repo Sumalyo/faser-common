@@ -23,22 +23,20 @@ struct TrackerDataFragment {
 
     for (size_t i=0; i<size/4;i++ )
     {
-       int frameType = (data[i] & 0x3<<30)>>30;//(d & 0b111<<30)>>30;
+       int frameType = (data[i] & 0x3<<30)>>30;//(d & 0b11<<30)>>30;
        int frameCounter=(data[i] & 0x7<<27)>>27;
        int moduleOrInfo=(data[i] & 0x7<<24)>>24;
-       int payloadLength=24; //Change to be more general later?
        int modNer=0; //mod ID in error message
-       int errId=(data[i]&0x15);
+       int errId=(data[i]&0xF);
        
       // std::cout<<frameType<<" | "<<frameCounter<<std::endl;
-       
-       if (frameType==0)
+       if (frameType==0 and moduleOrInfo==0){event.m_event_id=data[i]&payloadMask;}
+       if (frameType==1)
        { 
          switch(moduleOrInfo)
          {
-           case 0:event.m_event_id=data[i]&payloadMask; break;
-           case 1:
-                  
+           case 0:event.m_bc_id=data[i]&bcidMask; break;
+           case 1:        
                   std::cout<<"TRB ERROR: "<<errId<<std::endl; 
                   event.m_trb_error_id=errId;
                   break;
@@ -51,8 +49,8 @@ struct TrackerDataFragment {
          }
 
        }
-       if (frameType==1 and moduleOrInfo==0){event.m_bc_id=data[i]&bcidMask;}
-	if (frameType == 2 || frameType == 3)
+       
+       if (frameType == 2 || frameType == 3)
 	{
 	     std::pair<uint8_t, uint8_t> key { moduleOrInfo , (frameType == 2 ? 0 : 1) };
 	     event.m_modDB[key].push_back(data[i] & payloadMask);
@@ -62,6 +60,7 @@ struct TrackerDataFragment {
     
   bool valid() const {
     if (m_size<sizeof(event.m_event_id) ) return false; //example. Eventually to check dimensions of data, check for error ids.
+    //if (m_
     return true;
   }
 
