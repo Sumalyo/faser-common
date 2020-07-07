@@ -33,8 +33,6 @@ struct DigitizerDataFragment {
       //      ERROR("Data size : "<<size);
       THROW(DigitizerDataException, "The fragment is not big enough to even be a header");
     }
-
-    std::cout<<"Word[0] : "<<data[0]<<std::endl;
     
     // decode header
     event.event_size            = data[0] & 0x0FFFFFFF;
@@ -49,7 +47,7 @@ struct DigitizerDataFragment {
     // note that you need to multiply by 4 because the size is given in bytes of 8 bits but the event size is encoded
     // as the number of 32 bit words
     if( (event.event_size*4) != size ){
-      //      ERROR("Expected and observed size of payload do not agree");
+      ERROR("Expected and observed size of payload do not agree");
       ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
       THROW(DigitizerDataException, "Mismatch in payload size and expected size");
     }
