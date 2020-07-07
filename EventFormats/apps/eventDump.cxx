@@ -121,9 +121,11 @@ int main(int argc, char **argv) {
             }
             break;
           case TrackerSourceID: //FIXME put in specific 
+	    break;
           case PMTSourceID:
             if(showData && showDigitizer){
               if (event.event_tag() == PhysicsTag ) {
+		std::cout<<"Size: "<<frag->payload_size()<<std::endl;
                 DigitizerDataFragment digitizer_data_frag = DigitizerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
                 std::cout<<"Digitizer data fragment:"<<std::endl;
                 std::cout<<digitizer_data_frag<<std::endl;
