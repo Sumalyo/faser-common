@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
             }
             break;
           case TrackerSourceID: //FIXME put in specific 
+	    break;
           case PMTSourceID:
             if(showData && showDigitizer){
               if (event.event_tag() == PhysicsTag ) {
