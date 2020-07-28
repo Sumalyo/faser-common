@@ -103,3 +103,8 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
  return out;
 }
 
+void DecodeModuleData(unsigned int module, std::vector< std::vector<uint32_t> > moduleData, std::vector< std::vector <uint16_t> > *moduleConfig)
+{
+  return;
+};
+
