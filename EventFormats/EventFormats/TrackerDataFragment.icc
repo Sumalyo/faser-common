@@ -1,0 +1,11 @@
+#pragma once
+#include <bitset>
+#include "Exceptions/Exceptions.hpp"
+#include <iomanip>
+#include <bitset>
+#include <map>
+
+void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass, std::vector< std::vector <uint16_t> > *moduleConfig)
+{
+  return;
+};
