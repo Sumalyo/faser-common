@@ -37,10 +37,17 @@ const unsigned int m_usedBitsPerWord = 24;
 
 class DecodeClass{
   public:
-  void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass)
-{
-  bool praeambleFound = false;
-  Bitstream bitstream(); //something with moduleData[module] in ()
+    void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap)
+  {
+    bool praeambleFound = false;
+    for(int module=0;module<8;module++){
+      for(int LED=0;LED<2;LED++){
+        std::pair<uint8_t, uint8_t> ModuleSide { module, LED };
+        Bitstream bitstream(dataMap[ModuleSide]); //something with moduleData[module] in ()
+      }
+    }
+    
+  
   int removedBits = 0;
   auto time_start = std::chrono::high_resolution_clock::now();
   auto time_end = std::chrono::high_resolution_clock::now();
@@ -49,7 +56,10 @@ class DecodeClass{
   
 
     return;
-}
+  }
+  void GetModule(){}
+  private:
+  void AddModule(){}
 };
 
 void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)
@@ -74,6 +84,48 @@ void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int ch
   */
 }
 
+class SCTEvent {
+  public:
+    SCTEvent (unsigned int moduleID, unsigned int l1id, unsigned int bcid);
+    ~SCTEvent();
+    
+    void AddHeader(unsigned int l1id, unsigned int bcid);
+    void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern);
+    void AddError (unsigned int chip, unsigned int err);
+    void AddUnknownChip (unsigned int chip) {m_UnkownChips.push_back(chip);}
+    
+    unsigned int GetNHits();
+    unsigned int GetNHits(int chip);
+    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > GetHits() {return m_Hits;}
+    std::vector < std::pair<uint8_t, uint8_t> >                 GetHits(int chip);
+    std::vector < std::vector < uint8_t > >                     GetErrors() {return m_Errors;}
+    std::vector < uint8_t >                                     GetErrors(int chip);
+    std::vector < uint8_t >                                     GetUnknownChips() {return m_UnkownChips;}
+    
+    bool HasError() {return m_hasError;}
+    bool IsComplete() {return m_complete;}
+    void SetComplete() {m_complete = true;}
+    bool MissingData() {return m_missingData;}
+    void SetMissingData() {m_missingData = true;}
+    bool BCIDMismatch() {return m_bcidMismatch;}
+    void SetBCIDMismatch() {m_bcidMismatch = true;}
+    unsigned short GetL1ID() {return m_l1id;}
+    unsigned short GetBCID() {return m_bcid;}
+    
+  private:
+    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > m_Hits; // chips[12][nHits] , hit = pair {Strip Nr, Hit pattern}
+    std::vector < std::vector < uint8_t > > m_Errors; // chips[12][error]
+    std::vector < uint8_t > m_UnkownChips; // chipIDs that were not expected
+    unsigned short m_moduleID;
+    unsigned short m_bcid;
+    unsigned short m_l1id;
+   
+    bool m_complete; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
+    bool m_missingData; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
+    bool m_bcidMismatch; // bcid mismatch between led and ledX data streams
+    bool m_hasError; // bcid mismatch between led and ledX data streams
+    std::map<unsigned int, unsigned int> m_chipIDMap; // maps chipID to vector index
+  };
 
 
 /** \brief Support class providing a contineous bitstream, used to analyse SCT module data.
