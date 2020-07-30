@@ -4,8 +4,51 @@
 #include <iomanip>
 #include <bitset>
 #include <map>
+#include <chrono>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdint>
+#include <vector>
 
-void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass, std::vector< std::vector <uint16_t> > *moduleConfig)
+
+
+class DecodeClass{
+  public:
+  void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass)
 {
-  return;
+    return;
+}
+};
+
+
+/** \brief Support class providing a contineous bitstream, used to analyse SCT module data.
+The input vector is expected to contain the module data in the 24 LSB of the 32 bit words,
+as received from the tracker readout board. Bitstream data is stringed together and available in
+junks of 32-bits using Get32BitWord(). RemoveBits(n) will remvove the n MSB from the bitstream.
+Next call to Get32BitWord() will have the reamining bitstream aligned properly at the MSB of the
+word.
+*/
+
+
+class Bitstream {
+public:
+Bitstream(std::vector<uint32_t> data);
+
+void Add(Bitstream stream) {m_bitstreamData.insert(m_bitstreamData.end(), stream.GetDataVector().begin(), stream.GetDataVector().end()); }
+void FillData(std::vector<uint32_t> data){ m_bitstreamData = data;}
+void RemoveBits(unsigned int n);
+uint32_t GetWord32() {return m_currentBuffer;}
+std::vector<uint32_t> GetDataVector() {return m_bitstreamData;}
+bool BitsAvailable() {return (m_bitsAvailable > 0);}
+unsigned int NBitsAvailable() {return m_bitsAvailable;}
+unsigned int AvailableWords() {return m_bitstreamData.size();}
+
+private:
+uint32_t m_currentBuffer;
+std::vector<uint32_t> m_bitstreamData;
+unsigned int m_bitsUsedOfNextWord;
+long m_bitsAvailable;
+
+const unsigned int m_usedBitsPerWord = 24;
 };

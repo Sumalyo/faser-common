@@ -5,7 +5,8 @@
 #include <bitset>
 #include <map>
 
-// this is a test comment
+#include "TrackerDataFragment.icc" 
+
 class TrackerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 struct TrackerDataFragment { 
@@ -56,6 +57,9 @@ struct TrackerDataFragment {
 	     event.m_modDB[key].push_back(data[i] & payloadMask);
 	}       
     }
+  
+  DecodeClass blep;
+  blep.DecodeModuleData(8,event.m_modDB,true);
 }
     
   bool valid() const {
@@ -105,4 +109,3 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
 
 
 
-#include "TrackerDataFragment.icc" 
