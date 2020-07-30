@@ -57,9 +57,11 @@ class DecodeClass{
 
     return;
   }
-  void GetModule(){}
+  SCTEvent* GetModule(unsigned int moduleID){}
+  const SCTEvent& GetModule(uint32_t moduleID) const;
+  
   private:
-  void AddModule(){}
+  void AddModule(unsigned int moduleID, SCTEvent *event){}
 };
 
 void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)

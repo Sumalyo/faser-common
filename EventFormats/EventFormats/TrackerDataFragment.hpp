@@ -59,12 +59,12 @@ struct TrackerDataFragment {
     }
   
   DecodeClass blep;
-  blep.DecodeModuleData(8,event.m_modDB,true);
+  blep.DecodeModuleData(event.m_modDB);
 }
     
   bool valid() const {
     if (m_size<sizeof(event.m_event_id) ) return false; //example. Eventually to check dimensions of data, check for error ids.
-    //if (m_
+  
     return true;
   }
 
@@ -86,7 +86,7 @@ struct TrackerDataFragment {
       uint8_t m_trb_error_id;
       std::vector< uint8_t > m_module_error_ids;
       std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
-      // std::vector < SCTEvents > m_hits_per_module; // SCTEvent to be implemented in 2nd step.
+      std::vector < SCTEvent > m_hits_per_module; // SCTEvent to be implemented in 2nd step.
     }  event;
     size_t m_size;
     bool m_debug;
