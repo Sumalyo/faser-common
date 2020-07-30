@@ -12,25 +12,6 @@
 #include <vector>
 
 
-
-class DecodeClass{
-  public:
-  void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass)
-{
-    return;
-}
-};
-
-
-/** \brief Support class providing a contineous bitstream, used to analyse SCT module data.
-The input vector is expected to contain the module data in the 24 LSB of the 32 bit words,
-as received from the tracker readout board. Bitstream data is stringed together and available in
-junks of 32-bits using Get32BitWord(). RemoveBits(n) will remvove the n MSB from the bitstream.
-Next call to Get32BitWord() will have the reamining bitstream aligned properly at the MSB of the
-word.
-*/
-
-
 class Bitstream {
 public:
 Bitstream(std::vector<uint32_t> data);
@@ -52,3 +33,56 @@ long m_bitsAvailable;
 
 const unsigned int m_usedBitsPerWord = 24;
 };
+
+
+class DecodeClass{
+  public:
+  void DecodeModuleData(unsigned int module, std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap, bool firstPass)
+{
+  bool praeambleFound = false;
+  Bitstream bitstream(); //something with moduleData[module] in ()
+  int removedBits = 0;
+  auto time_start = std::chrono::high_resolution_clock::now();
+  auto time_end = std::chrono::high_resolution_clock::now();
+  long int eventCount = 0;
+
+  
+
+    return;
+}
+};
+
+void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)
+//what is chipIDMap
+//where is m_Hits
+{/*
+  std::vector < std::vector < std::pair<uint8_t, uint8_t> > > m_Hits;
+  chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
+  auto it = m_chipIDMap.find(chip); //fix this
+  if (it == m_chipIDMap.end()) { //fix this when i know what chipIDmap is
+    if (false){
+      std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
+      std::cout << "Known IDs: "<<std::endl;
+      for (auto it : m_chipIDMap){
+        std::cout << " ChipID = 0x"<<std::hex<<it.first<<" Index = "<<std::dec<<it.second<<std::endl;
+        m_Hits.back().push_back(std::make_pair(chip, strip));
+      }
+    }
+    return;
+  }
+  m_Hits[it->second].push_back(std::make_pair(strip, pattern));
+  */
+}
+
+
+
+/** \brief Support class providing a contineous bitstream, used to analyse SCT module data.
+The input vector is expected to contain the module data in the 24 LSB of the 32 bit words,
+as received from the tracker readout board. Bitstream data is stringed together and available in
+junks of 32-bits using Get32BitWord(). RemoveBits(n) will remvove the n MSB from the bitstream.
+Next call to Get32BitWord() will have the reamining bitstream aligned properly at the MSB of the
+word.
+*/
+
+
+
