@@ -34,8 +34,8 @@ long m_bitsAvailable;
 const unsigned int m_usedBitsPerWord = 24;
 };
 
-
-class DecodeClass{
+struct TrackerDataFragment { 
+#pragma region constants
    const uint32_t MASK_TRBFRAME            = 0xC7000000;
     const uint32_t TRB_HEADER               = 0x00000000;
     const uint32_t TRB_TRAILER              = 0x01000000;
@@ -102,11 +102,117 @@ class DecodeClass{
     const uint32_t MASK_CHIPADD_DATA   = 0xF;
     const uint32_t RSHIFT_CHANNEL_DATA = 19;
     const uint32_t MASK_CHANNEL_DATA   = 0x7F;
+#pragma endregion constants
+  
+  class SCTEvent {
+  public:
+    SCTEvent (unsigned int moduleID, unsigned int l1id, unsigned int bcid);
+    ~SCTEvent();
+    
+    void AddHeader(unsigned int l1id, unsigned int bcid);
+    void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern);
+    void AddError (unsigned int chip, unsigned int err);
+    void AddUnknownChip (unsigned int chip) {m_UnkownChips.push_back(chip);}
+    
+    unsigned int GetNHits();
+    unsigned int GetNHits(int chip);
+    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > GetHits() {return m_Hits;}
+    std::vector < std::pair<uint8_t, uint8_t> >                 GetHits(int chip);
+    std::vector < std::vector < uint8_t > >                     GetErrors() {return m_Errors;}
+    std::vector < uint8_t >                                     GetErrors(int chip);
+    std::vector < uint8_t >                                     GetUnknownChips() {return m_UnkownChips;}
+    
+    bool HasError() {return m_hasError;}
+    bool IsComplete() {return m_complete;}
+    void SetComplete() {m_complete = true;}
+    bool MissingData() {return m_missingData;}
+    void SetMissingData() {m_missingData = true;}
+    bool BCIDMismatch() {return m_bcidMismatch;}
+    void SetBCIDMismatch() {m_bcidMismatch = true;}
+    unsigned short GetL1ID() {return m_l1id;}
+    unsigned short GetBCID() {return m_bcid;}
+    
+  private:
+    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > m_Hits; // chips[12][nHits] , hit = pair {Strip Nr, Hit pattern}
+    std::vector < std::vector < uint8_t > > m_Errors; // chips[12][error]
+    std::vector < uint8_t > m_UnkownChips; // chipIDs that were not expected
+    unsigned short m_moduleID;
+    unsigned short m_bcid;
+    unsigned short m_l1id;
+   
+    bool m_complete; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
+    bool m_missingData; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
+    bool m_bcidMismatch; // bcid mismatch between led and ledX data streams
+    bool m_hasError; // bcid mismatch between led and ledX data streams
+    std::map<unsigned int, unsigned int> m_chipIDMap; // maps chipID to vector index
+  };
 
+  
+  TrackerDataFragment( const uint32_t *data, size_t size ) {
+    m_size = size;
+    m_debug = false;
+    event.m_event_id = 0xffffff;
+    event.m_bc_id = 0xffff;
+
+    // now to fill data members from data - can refer to TRBEvent in gpiodrivers.
+    const uint32_t errorMask   = 0x0000000F; //  4 bits
+    const uint32_t bcidMask    = 0x00000FFF; // 12 bits
+    const uint32_t payloadMask = 0x00FFFFFF; // 24 bits
+
+    for (size_t i=0; i<size/4;i++ )
+    {
+       int frameType = (data[i] & 0x3<<30)>>30;//(d & 0b11<<30)>>30;
+       int frameCounter=(data[i] & 0x7<<27)>>27;
+       int moduleOrInfo=(data[i] & 0x7<<24)>>24;
+       int modNer=0; //mod ID in error message
+       int errId=(data[i]&0xF);
+       
+      // std::cout<<frameType<<" | "<<frameCounter<<std::endl;
+       if (frameType==0 and moduleOrInfo==0){event.m_event_id=data[i]&payloadMask;}
+       if (frameType==1)
+       { 
+         switch(moduleOrInfo)
+         {
+           case 0:event.m_bc_id=data[i]&bcidMask; break;
+           case 1:        
+                  std::cout<<"TRB ERROR: "<<errId<<std::endl; 
+                  event.m_trb_error_id=errId;
+                  break;
+           case 2:
+           case 3:
+                  modNer=(data[i]&0x7<<24)>>24;
+                  event.m_module_error_ids.push_back((frameType%2)<<7 | (modNer) << 4 | errId);
+                  std::cout<<"LED(x) Module error: Module "<<modNer<<" ErrID: "<<errId<<std::endl; break;
+
+         }
+
+       }
+       
+       if (frameType == 2 || frameType == 3)
+	{
+	     std::pair<uint8_t, uint8_t> key { moduleOrInfo , (frameType == 2 ? 0 : 1) };
+	     event.m_modDB[key].push_back(data[i] & payloadMask);
+	}       
+    }
+  
+}
+    
+  bool valid() const {
+    if (m_size<sizeof(event.m_event_id) ) return false; //example. Eventually to check dimensions of data, check for error ids.
+  
+    return true;
+  }
 
   public:
-    DecodeClass();
-    ~DecodeClass();
+    // getters
+    uint32_t event_id() const { return event.m_event_id; }
+    uint32_t bc_id() const { return event.m_bc_id; }
+    size_t size() const { return m_size; }
+    uint8_t trb_error_id() const { return event.m_trb_error_id;}
+    std::vector<uint8_t>  module_error_id() const { return event.m_module_error_ids;}
+    std::map< std::pair<uint8_t, uint8_t>,std::vector<uint32_t> >  module_modDB() const {return  event.m_modDB;}
+    //setters
+    void set_debug_on( bool debug = true ) { m_debug = debug; }
 
     void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap){
       for(int module=0;module<8;module++){
@@ -221,24 +327,33 @@ class DecodeClass{
   Bitstream* GetModuleBitstream(unsigned int module, bool led);
   //std::vector <TrackerDataFragment *> GetEvents() {return m_Events;}
 
-  
-  private:
-  void AddModule(unsigned int moduleID, SCTEvent *event){}
-  
-  int m_PrintEventInformation;
-  
-  //std::vector <TRBEvent *> m_Events;
-  //std::vector <std::vector <TRBEvent *> > m_EventsPerScanStep;
-  
-  std::vector<uint32_t> m_data;
-  std::vector<char> m_dataBytes;
-  std::vector< std::vector<uint32_t> > m_moduleData_led; /// Vector holding 8 vectors of 32bit words = 8 modules
-  std::vector< std::vector<uint32_t> > m_moduleData_ledx; /// Vector holding 8 vectors of 32bit words = 8 modules
-  bool m_headerOK;
-  bool m_trailerOK;
-  int m_eventCnt;
-  int m_eventCntEOD;
 
+  private:
+    struct TRBEvent {
+      uint32_t m_event_id;
+      uint32_t m_bc_id;
+      uint8_t m_trb_error_id;
+      std::vector< uint8_t > m_module_error_ids;
+      std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
+      std::vector < SCTEvent > m_hits_per_module; // SCTEvent to be implemented in 2nd step.
+    }  event;
+    size_t m_size;
+    bool m_debug;
+    void AddModule(unsigned int moduleID, SCTEvent *event){}
+  
+    int m_PrintEventInformation;
+    
+    //std::vector <TRBEvent *> m_Events;
+    //std::vector <std::vector <TRBEvent *> > m_EventsPerScanStep;
+    
+    std::vector<uint32_t> m_data;
+    std::vector<char> m_dataBytes;
+    std::vector< std::vector<uint32_t> > m_moduleData_led; /// Vector holding 8 vectors of 32bit words = 8 modules
+    std::vector< std::vector<uint32_t> > m_moduleData_ledx; /// Vector holding 8 vectors of 32bit words = 8 modules
+    bool m_headerOK;
+    bool m_trailerOK;
+    int m_eventCnt;
+    int m_eventCntEOD;
 };
 
 void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)
@@ -263,50 +378,6 @@ void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int ch
   
 }
 
-class SCTEvent {
-  public:
-    SCTEvent (unsigned int moduleID, unsigned int l1id, unsigned int bcid);
-    ~SCTEvent();
-    
-    void AddHeader(unsigned int l1id, unsigned int bcid);
-    void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern);
-    void AddError (unsigned int chip, unsigned int err);
-    void AddUnknownChip (unsigned int chip) {m_UnkownChips.push_back(chip);}
-    
-    unsigned int GetNHits();
-    unsigned int GetNHits(int chip);
-    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > GetHits() {return m_Hits;}
-    std::vector < std::pair<uint8_t, uint8_t> >                 GetHits(int chip);
-    std::vector < std::vector < uint8_t > >                     GetErrors() {return m_Errors;}
-    std::vector < uint8_t >                                     GetErrors(int chip);
-    std::vector < uint8_t >                                     GetUnknownChips() {return m_UnkownChips;}
-    
-    bool HasError() {return m_hasError;}
-    bool IsComplete() {return m_complete;}
-    void SetComplete() {m_complete = true;}
-    bool MissingData() {return m_missingData;}
-    void SetMissingData() {m_missingData = true;}
-    bool BCIDMismatch() {return m_bcidMismatch;}
-    void SetBCIDMismatch() {m_bcidMismatch = true;}
-    unsigned short GetL1ID() {return m_l1id;}
-    unsigned short GetBCID() {return m_bcid;}
-    
-  private:
-    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > m_Hits; // chips[12][nHits] , hit = pair {Strip Nr, Hit pattern}
-    std::vector < std::vector < uint8_t > > m_Errors; // chips[12][error]
-    std::vector < uint8_t > m_UnkownChips; // chipIDs that were not expected
-    unsigned short m_moduleID;
-    unsigned short m_bcid;
-    unsigned short m_l1id;
-   
-    bool m_complete; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
-    bool m_missingData; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
-    bool m_bcidMismatch; // bcid mismatch between led and ledX data streams
-    bool m_hasError; // bcid mismatch between led and ledX data streams
-    std::map<unsigned int, unsigned int> m_chipIDMap; // maps chipID to vector index
-  };
-
-
 /** \brief Support class providing a contineous bitstream, used to analyse SCT module data.
 The input vector is expected to contain the module data in the 24 LSB of the 32 bit words,
 as received from the tracker readout board. Bitstream data is stringed together and available in
@@ -316,4 +387,18 @@ word.
 */
 
 
+inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &event) {
+  try {
+    out
+    <<std::setw(11)<<" event_id: "<<std::setfill(' ')<<std::setw(32)<<event.event_id()<<std::setfill(' ')<<std::endl
+    <<std::setw(11)<<" bc_id: "<<std::setfill(' ')<<std::setw(32)<<event.bc_id()<<std::setfill(' ')<<std::endl
+    <<std::endl;
+  } catch ( TrackerDataException& e ) {
+    out<<e.what()<<std::endl;
+    out<<"Corrupted data for Tracker data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
+    out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
+  }
+
+ return out;
+}
 
