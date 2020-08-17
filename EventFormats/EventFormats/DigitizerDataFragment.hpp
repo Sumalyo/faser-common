@@ -1,8 +1,9 @@
 #pragma once
+#include <map>
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
-#include "Logging.hpp"
+//#include "Logging.hpp"
 
 #define N_MAX_CHAN 16
 
@@ -202,9 +203,9 @@ struct DigitizerDataFragment {
       }
       
       // if they requested data from an empty channel, then tell them
-      if( GetBit(event.channel_mask, channel)==false ){
-	WARNING("You are requesting data for channel "<<channel<<" which was not enabled for reading in data taking.  Are you sure you want to use this?");
-      }
+      //if( GetBit(event.channel_mask, channel)==false ){
+	//WARNING("You are requesting data for channel "<<channel<<" which was not enabled for reading in data taking.  Are you sure you want to use this?");
+      //}
       
       return event.adc_counts.find(channel)->second;
     
