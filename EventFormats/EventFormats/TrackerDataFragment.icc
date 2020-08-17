@@ -36,16 +36,175 @@ const unsigned int m_usedBitsPerWord = 24;
 
 
 class DecodeClass{
+   const uint32_t MASK_TRBFRAME            = 0xC7000000;
+    const uint32_t TRB_HEADER               = 0x00000000;
+    const uint32_t TRB_TRAILER              = 0x01000000;
+    const uint32_t TRB_END                  = 0x07000eee;
+    
+    const uint32_t MASK_WORDTYPE            = 0xC0000000;
+    const uint32_t WORDTYPE_TRBHEADER       = 0x0;
+    const uint32_t WORDTYPE_TRBTRAILER      = 0x0;
+    const uint32_t WORDTYPE_TRBDATA         = 0x40000000;
+    const uint32_t WORDTYPE_MODULEDATA_LED  = 0x80000000;
+    const uint32_t WORDTYPE_MODULEDATA_LEDX = 0xC0000000;
+    
+    const uint32_t MASK_TRBDATATYPE             = 0x7000000;
+    static const uint32_t TRBDATATYPE_BCID             = 0x0000000;
+    static const uint32_t TRBDATATYPE_TRBERROR         = 0x1000000;
+    static const uint32_t TRBDATATYPE_MODULEERROR_LED  = 0x2000000;
+    static const uint32_t TRBDATATYPE_MODULEERROR_LEDX = 0x3000000;
+    
+    const uint32_t MASK_FRAMECNT    = 0x38000000;
+    const uint32_t RSHIFT_FRAMECNT  = 27;
+    const uint32_t MASK_BCID     = 0xFFF;
+    const uint32_t MASK_ERROR    = 0xF;
+    const uint32_t MASK_MODULEDATA_MODULEID    = 0x7000000;
+    const uint32_t RSHIFT_MODULEDATA_MODULEID  = 24;
+    const uint32_t MASK_MODULEDATA = 0xFFFFFF;
+    const uint32_t MASK_TRBDATA_MODULEID       = 0x0700000;
+    const uint32_t SHIFT_TRBDATA_MODULEID       = 20;
+    const uint32_t MASK_EVNTCNT  = 0xFFFFFF;
+    const uint32_t MASK_CRC      = 0xFFFFFF;
+    const uint32_t END_OF_DAQ    = 0x7000EEE; // magic word
+    
+    const unsigned int usefulBitsModuleData = 32 ; // How many bits are used per word? All MASK / TAG constants rely on this alignment
+    // MASKS for module data
+    
+    const uint32_t MASK_MODULE_HEADER = 0xFC002000;
+    const uint32_t TAG_MODULE_HEADER  = 0xE8002000;
+    const uint32_t MASK_MODULE_TRAILER= 0xFFFF0000;
+    const uint32_t TAG_MODULE_TRAILER = 0x80000000;
+    const uint32_t MASK_MODULE_ERROR  = 0xE0200000;
+    const uint32_t TAG_MODULE_ERROR   = 0x00200000;
+    const uint32_t MASK_MODULE_CONFIG = 0xE1C02010;
+    const uint32_t TAG_MODULE_CONFIG  = 0x1C02010;
+    const uint32_t MASK_MODULE_DATA   = 0xC0040000;
+    const uint32_t TAG_MODULE_DATA    = 0x40040000;
+    const uint32_t MASK_MODULE_NODATA = 0xE0000000;
+    const uint32_t TAG_MODULE_NODATA  = 0x20000000;
+    
+    // access data modules with bit shift & mask
+    const uint32_t RSHIFT_MODULE_BCID = 14;
+    const uint32_t MASK_MODULE_BCID   = 0xff;
+    const uint32_t RSHIFT_MODULE_L1ID = 22;
+    const uint32_t MASK_MODULE_L1ID   = 0xf;
+    
+    const uint32_t RSHIFT_CHIPADD_CONF = 25;
+    const uint32_t MASK_CHIPADD_CONF   = 0xF;
+    const uint32_t RSHIFT_CONF1        = 14;
+    const uint32_t RSHIFT_CONF2        = 5;
+    const uint32_t MASK_CONF           = 0xFF;
+    const uint32_t RSHIFT_CHIPADD_ERR  = 25;
+    const uint32_t MASK_CHIPADD_ERR    = 0xF;
+    const uint32_t RSHIFT_ERR          = 22;
+    const uint32_t MASK_ERR            = 0x7;
+    const uint32_t RSHIFT_CHIPADD_DATA = 26;
+    const uint32_t MASK_CHIPADD_DATA   = 0xF;
+    const uint32_t RSHIFT_CHANNEL_DATA = 19;
+    const uint32_t MASK_CHANNEL_DATA   = 0x7F;
+
+
   public:
-    void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap)
-  {
-    bool praeambleFound = false;
-    for(int module=0;module<8;module++){
-      for(int LED=0;LED<2;LED++){
-        std::pair<uint8_t, uint8_t> ModuleSide { module, LED };
-        Bitstream bitstream(dataMap[ModuleSide]); //something with moduleData[module] in ()
+    DecodeClass();
+    ~DecodeClass();
+
+    void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap){
+      for(int module=0;module<8;module++){
+        for(int LED=0;LED<2;LED++){
+          SCTEvent *sctEvent;
+          TrackerDataFragment *trackerFragment;//TRBEvent *trbEvent;
+
+          bool praeambleFound = false;
+          std::pair<uint8_t, uint8_t> ModuleSide { module, LED };
+          Bitstream bitstream(dataMap[ModuleSide]); //something with moduleData[module] in ()
+          int removedBits = 0;
+
+          auto time_start = std::chrono::high_resolution_clock::now();
+          auto time_end = std::chrono::high_resolution_clock::now();
+          long int eventCount = 0;
+          while (bitstream.BitsAvailable()){
+            // std::cout << "Data word = "<<std::hex << bitstream.GetWord32() <<std::endl;
+            if ((bitstream.GetWord32() & MASK_MODULE_HEADER) == TAG_MODULE_HEADER){
+              eventCount++;
+              if (eventCount %5000 == 0 ){ 
+                time_end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end-time_start);
+                std::cout << "Decodeding module data for evnt: "<<eventCount<< " rate = "<<5.0e6/duration.count()<<" kHz"<<std::endl;
+                time_start = std::chrono::high_resolution_clock::now();
+              }
+              unsigned int l1id = ((bitstream.GetWord32() >> RSHIFT_MODULE_L1ID)&MASK_MODULE_L1ID);
+              unsigned int bcid = ((bitstream.GetWord32() >> RSHIFT_MODULE_BCID)&MASK_MODULE_BCID);
+
+              //if (m_PrintEventInformation > 1) std::cout << "Module Header: L1D = "<<std::dec<< l1id <<" BCID = "<< bcid << std::endl;
+              //if (m_PrintEventInformation > 0) std::cout << "     removed bits bfore finding Module Header = "<<removedBits<<std::endl;
+
+              if (LED==0){
+                // process first half of module data (led / ledx line)
+                //if (m_Events.size() == 0){} // first event
+                //trbEvent = new TRBEvent(l1id, bcid);
+                sctEvent = new SCTEvent(module, l1id, bcid);
+                //trbEvent->AddModule(module, sctEvent);
+                //m_Events.push_back(trbEvent);
+              }
+              removedBits = 0;
+              bitstream.RemoveBits(19);
+              praeambleFound = true;
+              continue;
+            }
+            if (!praeambleFound){
+            bitstream.RemoveBits(1);
+            removedBits++;
+            continue;
+            }
+
+            if ((bitstream.GetWord32() & MASK_MODULE_ERROR) == TAG_MODULE_ERROR && praeambleFound){
+              unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_ERR)&MASK_CHIPADD_ERR);
+              unsigned int err = ((bitstream.GetWord32() >> RSHIFT_ERR)&MASK_ERR);
+              //if (m_PrintEventInformation > 0) std::cout << "Module Data: ERROR code 0x"<<std::hex<< err << " for chip "<<std::dec<< chip <<std::endl;
+              sctEvent->AddError(chip, err);
+              bitstream.RemoveBits(11);
+              continue;
+            }
+            if ((bitstream.GetWord32() & MASK_MODULE_CONFIG) == TAG_MODULE_CONFIG && praeambleFound){
+              bitstream.RemoveBits(28);
+              continue;
+            }
+            if ((bitstream.GetWord32() & MASK_MODULE_DATA) == TAG_MODULE_DATA && praeambleFound){
+              unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_DATA)&MASK_CHIPADD_DATA);
+              unsigned int channel = ((bitstream.GetWord32() >> RSHIFT_CHANNEL_DATA)&MASK_CHANNEL_DATA);
+              bitstream.RemoveBits(13); // after that we expect n-times <1><xxx> => check MSB to be 1
+              while ( ((bitstream.GetWord32() & 0x80000000) == 0x80000000) ){
+                // data packet
+                // !!! Trailer looks the same in this definition! => Always check if a trailer is found
+                if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER){
+                //if (m_PrintEventInformation > 1) std::cout << "Module Trailer "<< std::endl;
+                bitstream.RemoveBits(16);
+                praeambleFound = false;
+                
+                continue;
+                }
+                unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
+                sctEvent->AddHit(chip, channel, hit);
+                //if (m_PrintEventInformation > 4) std::cout << "  Hit pattern = "<<hit<<std::endl;
+                bitstream.RemoveBits(4);
+              }
+              continue;
+            }
+            
+            if ((bitstream.GetWord32() & MASK_MODULE_NODATA) == TAG_MODULE_NODATA && praeambleFound) {
+              //if (m_PrintEventInformation > 4) std::cout << "  No Hit packet"<<std::endl;
+              bitstream.RemoveBits(3);
+              continue;
+            }
+
+                // data is only valid after a praeamble (aka header) was found. Otherwise praeamble might be mistaken as an error code
+            praeambleFound = false;
+            // std::cout << "WARNING: unable to decode bitstream. Removing 1 bit until alignment is found again."<<std::endl;
+            bitstream.RemoveBits (1);          
+          }
+
+        }
       }
-    }
     
   
   int removedBits = 0;
@@ -59,9 +218,27 @@ class DecodeClass{
   }
   SCTEvent* GetModule(unsigned int moduleID){}
   const SCTEvent& GetModule(uint32_t moduleID) const;
+  Bitstream* GetModuleBitstream(unsigned int module, bool led);
+  //std::vector <TrackerDataFragment *> GetEvents() {return m_Events;}
+
   
   private:
   void AddModule(unsigned int moduleID, SCTEvent *event){}
+  
+  int m_PrintEventInformation;
+  
+  //std::vector <TRBEvent *> m_Events;
+  //std::vector <std::vector <TRBEvent *> > m_EventsPerScanStep;
+  
+  std::vector<uint32_t> m_data;
+  std::vector<char> m_dataBytes;
+  std::vector< std::vector<uint32_t> > m_moduleData_led; /// Vector holding 8 vectors of 32bit words = 8 modules
+  std::vector< std::vector<uint32_t> > m_moduleData_ledx; /// Vector holding 8 vectors of 32bit words = 8 modules
+  bool m_headerOK;
+  bool m_trailerOK;
+  int m_eventCnt;
+  int m_eventCntEOD;
+
 };
 
 void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)

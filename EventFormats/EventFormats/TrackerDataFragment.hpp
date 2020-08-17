@@ -11,6 +11,7 @@ class TrackerDataException : public Exceptions::BaseException { using Exceptions
 
 struct TrackerDataFragment { 
   
+  
   TrackerDataFragment( const uint32_t *data, size_t size ) {
     m_size = size;
     m_debug = false;
