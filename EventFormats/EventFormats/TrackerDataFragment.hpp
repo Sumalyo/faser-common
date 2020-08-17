@@ -158,8 +158,8 @@ struct TrackerDataFragment
     void set_debug_on( bool debug = true ) { m_debug = debug; }
 
     // prohibit copy and assign
-    TrackerDataFragment(const TrackerDataFragment&) = delete;
-    TrackerDataFragment& operator=(const TrackerDataFragment&) = delete;
+    TrackerDataFragment(const TrackerDataFragment& other) = delete;
+    TrackerDataFragment& operator=(const TrackerDataFragment& other) = delete;
 
   private:
     size_t m_size;
@@ -180,8 +180,8 @@ struct TrackerDataFragment
         std::vector < SCTEvent* > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
         // prohibit copy and assign
-        TRBEvent(const TRBEvent&) = delete;
-        TRBEvent& operator=(const TRBEvent&) = delete;
+        TRBEvent(const TRBEvent& other) = delete;
+        TRBEvent& operator=(const TRBEvent& other) = delete;
 
     }  event;
 
@@ -200,8 +200,8 @@ class Bitstream {
         unsigned int NBitsAvailable() const {return m_bitsAvailable;}
         unsigned int AvailableWords() const {return m_bitstreamData.size();}
 
-        Bitstream(const Bitstream&) = delete;
-        Bitstream& operator=(const Bitstream&) = delete;
+        Bitstream(const Bitstream& other) = delete;
+        Bitstream& operator=(const Bitstream& other) = delete;
 
     private:
         uint32_t m_currentBuffer;
