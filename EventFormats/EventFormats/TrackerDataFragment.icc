@@ -112,7 +112,7 @@ class DecodeClass{
       for(int module=0;module<8;module++){
         for(int LED=0;LED<2;LED++){
           SCTEvent *sctEvent;
-          TrackerDataFragment *trackerFragment;//TRBEvent *trbEvent;
+          //TrackerDataFragment *trackerFragment;//TRBEvent *trbEvent;
 
           bool praeambleFound = false;
           std::pair<uint8_t, uint8_t> ModuleSide { module, LED };
@@ -242,12 +242,12 @@ class DecodeClass{
 };
 
 void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int chipID)
-//what is chipIDMap
+//what is m_chipIDMap
 //where is m_Hits
-{/*
+{
   std::vector < std::vector < std::pair<uint8_t, uint8_t> > > m_Hits;
   chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
-  auto it = m_chipIDMap.find(chip); //fix this
+  /*auto it = m_chipIDMap.find(chip); //fix this
   if (it == m_chipIDMap.end()) { //fix this when i know what chipIDmap is
     if (false){
       std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
@@ -259,8 +259,8 @@ void AddHit (unsigned int chip, unsigned int strip, unsigned int pattern, int ch
     }
     return;
   }
-  m_Hits[it->second].push_back(std::make_pair(strip, pattern));
-  */
+  m_Hits[it->second].push_back(std::make_pair(strip, pattern)); */
+  
 }
 
 class SCTEvent {
