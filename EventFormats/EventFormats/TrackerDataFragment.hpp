@@ -168,6 +168,7 @@ struct TrackerDataFragment
     struct TRBEvent 
     {
     public:
+        TRBEvent() {}
         SCTEvent* GetModule(uint8_t moduleID) const { return m_hits_per_module[moduleID]; }
         void AddModule(SCTEvent* sctEvent) { m_hits_per_module.push_back(sctEvent); }
 
