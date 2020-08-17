@@ -58,6 +58,7 @@ private:
 
 struct TrackerDataFragment
 {
+  public:
 
 #pragma region constants
   
@@ -127,9 +128,11 @@ struct TrackerDataFragment
     const uint32_t MASK_CHIPADD_DATA   = 0xF;
     const uint32_t RSHIFT_CHANNEL_DATA = 19;
     const uint32_t MASK_CHANNEL_DATA   = 0x7F;
+
+    static const uint32_t MODULES_PER_FRAGMENT = 8;
+    static const uint32_t SIDES_PER_MODULE = 2;
 #pragma endregion constants
   
-  public:
     TrackerDataFragment( const uint32_t *data, size_t size );
 
     void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap);
@@ -148,7 +151,8 @@ struct TrackerDataFragment
     std::vector<uint8_t>  module_error_id() const { return event.m_module_error_ids;}
     std::map< std::pair<uint8_t, uint8_t>,std::vector<uint32_t> >  module_modDB() const {return  event.m_modDB;}
 
-    // to do: add a method to get the strip hits from TrackerDataFragment!
+    bool hasData(size_t module) const { return event.GetModule(static_cast<uint8_t>(module)) != nullptr; }
+    const SCTEvent& operator[](size_t module) const { return *event.GetModule(static_cast<uint8_t>(module)); }
 
     //setters
     void set_debug_on( bool debug = true ) { m_debug = debug; }
@@ -164,7 +168,7 @@ struct TrackerDataFragment
     struct TRBEvent 
     {
     public:
-        SCTEvent* GetModule(uint8_t moduleID) { return m_hits_per_module[moduleID]; }
+        SCTEvent* GetModule(uint8_t moduleID) const { return m_hits_per_module[moduleID]; }
         void AddModule(SCTEvent* sctEvent) { m_hits_per_module.push_back(sctEvent); }
 
         ~TRBEvent();
@@ -173,7 +177,7 @@ struct TrackerDataFragment
         uint8_t m_trb_error_id;
         std::vector< uint8_t > m_module_error_ids;
         std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
-        std::vector < SCTEvent* > m_hits_per_module;
+        std::vector < SCTEvent* > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
         // prohibit copy and assign
         TRBEvent(const TRBEvent&) = delete;

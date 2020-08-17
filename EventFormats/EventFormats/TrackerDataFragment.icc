@@ -55,9 +55,9 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
   
 inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap)
 {
-  for (uint8_t module=0; module<8; module++)
+  for (uint8_t module = 0; module < MODULES_PER_FRAGMENT; module++)
   {
-    for (uint8_t LED=0;LED<2;LED++)
+    for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
     {
       SCTEvent *sctEvent;
 
@@ -345,7 +345,7 @@ inline void SCTEvent::AddHit (unsigned int chip, unsigned int strip, unsigned in
       std::cout << "Known IDs: "<<std::endl;
       for (auto it : m_chipIDMap){
         std::cout << " ChipID = 0x"<<std::hex<<it.first<<" Index = "<<std::dec<<it.second<<std::endl;
-        m_Hits.back().push_back(std::make_pair(chip, strip));
+        m_Hits.back().push_back(std::make_pair(chip, strip++));
       }
     }
     return;
@@ -414,6 +414,14 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
     <<std::setw(11)<<" event_id: "<<std::setfill(' ')<<std::setw(32)<<event.event_id()<<std::setfill(' ')<<std::endl
     <<std::setw(11)<<" bc_id: "<<std::setfill(' ')<<std::setw(32)<<event.bc_id()<<std::setfill(' ')<<std::endl
     <<std::endl;
+    for (size_t module = 0; module < TrackerDataFragment::MODULES_PER_FRAGMENT; module++)
+    {
+      if (event.hasData(module))
+      {
+        auto sct = event[module];
+        out << "Module " << module << " has strip data (" << sct.GetNHits() << " hits from all chips)" << std::endl;
+      }
+    }
   } catch ( TrackerDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for Tracker data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
