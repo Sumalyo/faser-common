@@ -1,3 +1,17 @@
+# Seems to be unset in CI
+if(NOT DEFINED CMAKE_PROJECT_NAME)
+  set(CMAKE_PROJECT_NAME "Unknown")
+endif()
+
+if ("Calypso" STREQUAL ${CMAKE_PROJECT_NAME})
+# Calypso/athena build
+
+  message("faser-common build under calypso")
+  # Don't do anything here, use subdirectories directly as packages
+
+else()
+# Online build
+
 cmake_minimum_required(VERSION 3.4.3)
 
 project(faser_common)
@@ -26,3 +40,5 @@ if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME))
    add_subdirectory(tests)
 endif()
 
+
+endif()
