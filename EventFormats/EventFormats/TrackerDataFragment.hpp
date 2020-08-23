@@ -151,11 +151,11 @@ struct TrackerDataFragment
     std::vector<uint8_t>  module_error_id() const { return event.m_module_error_ids;}
     std::map< std::pair<uint8_t, uint8_t>,std::vector<uint32_t> >  module_modDB() const {return  event.m_modDB;}
 
-    bool hasData(size_t module) const { return event.GetModule(static_cast<uint8_t>(module)) != nullptr; }
-    const SCTEvent& operator[](size_t module) const { return *event.GetModule(static_cast<uint8_t>(module)); }
+    bool hasData(size_t module) const { return (event.GetModule(module) != nullptr); }
+    const SCTEvent& operator[](size_t module) const { return *event.GetModule(module); }
 
     //setters
-    void set_debug_on( bool debug = true ) { m_debug = debug; }
+    static void set_debug_on( bool debug = true ) { m_debug = debug; }
 
     // prohibit copy and assign
     TrackerDataFragment(const TrackerDataFragment& other) = delete;
@@ -163,16 +163,18 @@ struct TrackerDataFragment
 
   private:
     size_t m_size;
-    bool m_debug;
+    static bool m_debug;
 
     struct TRBEvent 
     {
     public:
         TRBEvent() {}
-        SCTEvent* GetModule(uint8_t moduleID) const { return m_hits_per_module[moduleID]; }
-        void AddModule(SCTEvent* sctEvent) { m_hits_per_module.push_back(sctEvent); }
+        SCTEvent* GetModule(size_t moduleID) const { return m_hits_per_module[moduleID]; }
+        void SetModule(size_t moduleID, SCTEvent* sctEvent) { m_hits_per_module[moduleID] = sctEvent; }
+        // void AddModule(SCTEvent* sctEvent) { m_hits_per_module.push_back(sctEvent); }
 
         ~TRBEvent();
+
         uint32_t m_event_id;
         uint32_t m_bc_id;
         uint8_t m_trb_error_id;

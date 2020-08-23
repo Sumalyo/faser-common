@@ -48,9 +48,9 @@ struct DigitizerDataFragment {
     // note that you need to multiply by 4 because the size is given in bytes of 8 bits but the event size is encoded
     // as the number of 32 bit words
     if( (event.event_size*4) != size ){
-      //      ERROR("Expected and observed size of payload do not agree");
-      //      ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
-      THROW(DigitizerDataException, "Mismatch in payload size and expected size");
+          //  ERROR("Expected and observed size of payload do not agree");
+          //  ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
+      THROW(DigitizerDataException, "Mismatch in payload size (" + std::to_string(size) + ") and expected size (" + std::to_string(event.event_size*4) + ")");
     }
     
     // parse the ADC count data

@@ -11,7 +11,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   )
 
   atlas_add_library ( EventFormats
-  		    EventFormats/*.hpp ../Logging/include/*.hpp
+  		    EventFormats/*.hpp EventFormats/*.icc ../Logging/include/*.hpp
 		    PUBLIC_HEADERS EventFormats 
 		    LINK_LIBRARIES Exceptions 
 		    )
