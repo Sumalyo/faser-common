@@ -154,7 +154,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             continue;
             }
             unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
-            sctEvent->AddHit(chip, channel, hit);
+            sctEvent->AddHit(chip, channel++, hit);
             if (m_debug) std::cout << "  Hit pattern = "<<hit<<std::endl;
             bitstream.RemoveBits(4);
           }
@@ -350,14 +350,15 @@ inline void SCTEvent::AddHit (unsigned int chip, unsigned int strip, unsigned in
   chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
-    if (false){
-      std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
-      std::cout << "Known IDs: "<<std::endl;
-      for (auto it : m_chipIDMap){
-        std::cout << " ChipID = 0x"<<std::hex<<it.first<<" Index = "<<std::dec<<it.second<<std::endl;
-        m_Hits.back().push_back(std::make_pair(chip, strip++));
-      }
-    }
+    // if (false){
+    //   std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
+    //   std::cout << "Known IDs: "<<std::endl;
+    //   for (auto it : m_chipIDMap){
+    //     std::cout << " ChipID = 0x"<<std::hex<<it.first<<" Index = "<<std::dec<<it.second<<std::endl;
+    //     m_Hits.back().push_back(std::make_pair(chip, strip++));
+    //   }
+    // }
+    std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
     return;
   }
   m_Hits[it->second].push_back(std::make_pair(strip, pattern));
@@ -424,7 +425,7 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
     <<std::setw(11)<<" event_id: "<<std::setfill(' ')<<std::setw(32)<<event.event_id()<<std::setfill(' ')<<std::endl
     <<std::setw(11)<<" bc_id: "<<std::setfill(' ')<<std::setw(32)<<event.bc_id()<<std::setfill(' ')<<std::endl;
 
-    out<<"Undecoded data extracted for (module,side) pairs: ";
+    out<<"   Undecoded data extracted for (module,side) pairs: ";
     for (auto entry : event.module_modDB())
     {
       out<<"(" << static_cast<uint32_t>(entry.first.first) << "," << static_cast<uint32_t>(entry.first.second) << ") ";
@@ -436,7 +437,24 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
       if (event.hasData(module))
       {
         auto sct = event[module];
-        out << "Module " << module << " has strip data (" << sct.GetNHits() << " decoded hits from all chips)" << std::endl;
+        out << "   Module " << module << " has " << sct.GetNHits() << " decoded hits." << std::endl;
+        size_t chip = 0;
+        for (auto hitVector : sct.GetHits())
+        {
+          if (hitVector.size() == 0)
+          {
+            chip++;
+            continue;
+          }
+          out << "     Chip #" << chip << " hits:" << std::endl;
+          for (auto hit : hitVector)
+          {
+            uint8_t stripOnChip {hit.first};
+            std::bitset<3> hitPattern {hit.second};
+            out << "      " << "Strip: " << static_cast<size_t>(stripOnChip) << " : " << hitPattern << std::endl;
+          }
+          chip++;
+        }
       }
     }
 
