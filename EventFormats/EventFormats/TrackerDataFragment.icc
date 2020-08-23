@@ -56,7 +56,6 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
   
 inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap)
 {
-  std::cout << "DecodeModuleData debug = " << m_debug << std::endl;
   for (uint8_t module = 0; module < MODULES_PER_FRAGMENT; module++)
   {
     for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
