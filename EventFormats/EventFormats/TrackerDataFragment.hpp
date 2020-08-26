@@ -23,13 +23,15 @@ public:
     void AddError (unsigned int chip, unsigned int err);
     void AddUnknownChip (unsigned int chip) {m_UnkownChips.push_back(chip);}
     
+    unsigned short                                              GetModuleID() const { return m_moduleID; }
     unsigned int GetNHits() const;
-    unsigned int GetNHits(int chip) const;
-    std::vector < std::vector < std::pair<uint8_t, uint8_t> > > GetHits() const {return m_Hits;}
-    std::vector < std::pair<uint8_t, uint8_t> >                 GetHits(int chip) const;
-    std::vector < std::vector < uint8_t > >                     GetErrors() const {return m_Errors;}
-    std::vector < uint8_t >                                     GetErrors(int chip) const;
-    std::vector < uint8_t >                                     GetUnknownChips() const {return m_UnkownChips;}
+    unsigned int GetNHits(size_t chip) const;
+    const std::vector < std::vector < std::pair<uint8_t, uint8_t> > >& 
+                                                                GetHits() const {return m_Hits;}
+    const std::vector < std::pair<uint8_t, uint8_t> >&          GetHits(size_t chip) const;
+    const std::vector < std::vector < uint8_t > >&              GetErrors() const {return m_Errors;}
+    const std::vector < uint8_t >&                              GetErrors(size_t chip) const;
+    const std::vector < uint8_t >&                              GetUnknownChips() const {return m_UnkownChips;}
     
     bool HasError() const {return m_hasError;}
     bool IsComplete() const {return m_complete;}
@@ -129,8 +131,14 @@ struct TrackerDataFragment
     const uint32_t RSHIFT_CHANNEL_DATA = 19;
     const uint32_t MASK_CHANNEL_DATA   = 0x7F;
 
+    static const uint32_t PLANES_PER_STATION = 3;
+    static const uint32_t MODULES_PER_PLANE = 8;
     static const uint32_t MODULES_PER_FRAGMENT = 8;
+    static const uint32_t CHIPS_PER_MODULE = 12;
+    static const uint32_t CHIPS_PER_SIDE = 6;
     static const uint32_t SIDES_PER_MODULE = 2;
+    static const uint32_t STRIPS_PER_CHIP = 128;
+    static const uint32_t STRIPS_PER_SIDE = STRIPS_PER_CHIP * CHIPS_PER_SIDE;
 #pragma endregion constants
   
     TrackerDataFragment( const uint32_t *data, size_t size );
@@ -153,6 +161,15 @@ struct TrackerDataFragment
 
     bool hasData(size_t module) const { return (event.GetModule(module) != nullptr); }
     const SCTEvent& operator[](size_t module) const { return *event.GetModule(module); }
+
+    using const_iterator = std::vector<SCTEvent*>::const_iterator;
+    using iterator = std::vector<SCTEvent*>::iterator;
+
+    const_iterator cbegin() { return event.m_hits_per_module.cbegin(); }
+    const_iterator cend() { return event.m_hits_per_module.cend(); }
+    iterator begin() { return event.m_hits_per_module.begin(); }
+    iterator end() { return event.m_hits_per_module.end(); }
+
 
     //setters
     static void set_debug_on( bool debug = true ) { m_debug = debug; }

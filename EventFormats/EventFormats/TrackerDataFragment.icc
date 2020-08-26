@@ -288,10 +288,10 @@ inline TrackerDataFragment::TRBEvent::~TRBEvent()
 #pragma region SCTEvent
 
 inline SCTEvent::SCTEvent (uint8_t moduleID, unsigned int l1id, unsigned int bcid) 
-: m_moduleID(moduleID), m_bcid(bcid), m_l1id(l1id), m_complete(false), m_missingData(false), m_bcidMismatch(false), m_hasError(false)
+: m_moduleID(moduleID), m_bcid(bcid), m_l1id(l1id), m_complete(true), m_missingData(false), m_bcidMismatch(false), m_hasError(false)
 {
-  m_Hits.resize(13);
-  m_Errors.resize(13);
+  m_Hits.resize(12);
+  m_Errors.resize(12);
   m_chipIDMap.insert(std::pair<unsigned int, unsigned int>(0x20, 0));
   m_chipIDMap.insert(std::pair<unsigned int, unsigned int>(0x21, 1));
   m_chipIDMap.insert(std::pair<unsigned int, unsigned int>(0x22, 2));
@@ -358,6 +358,8 @@ inline void SCTEvent::AddHit (unsigned int chip, unsigned int strip, unsigned in
     //   }
     // }
     std::cout << "ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
+    m_complete = false;
+    m_missingData = true;
     return;
   }
   m_Hits[it->second].push_back(std::make_pair(strip, pattern));
@@ -376,7 +378,7 @@ inline unsigned int SCTEvent::GetNHits() const
 
 /** \brief returns number of hits found in this event in the given chip
  */
-inline unsigned int SCTEvent::GetNHits(int chip) const
+inline unsigned int SCTEvent::GetNHits(size_t chip) const
 {
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
@@ -391,7 +393,7 @@ inline unsigned int SCTEvent::GetNHits(int chip) const
 
 /** \brief returns hits for the given chip
  */
-inline std::vector < std::pair<uint8_t, uint8_t> > SCTEvent::GetHits(int chip) const
+inline const std::vector < std::pair<uint8_t, uint8_t> >& SCTEvent::GetHits(size_t chip) const
 {
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
@@ -403,7 +405,7 @@ inline std::vector < std::pair<uint8_t, uint8_t> > SCTEvent::GetHits(int chip) c
 
 /** \brief returns errors for the given chip
  */
-inline std::vector < uint8_t > SCTEvent::GetErrors(int chip) const
+inline const std::vector < uint8_t >& SCTEvent::GetErrors(size_t chip) const
 {
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
