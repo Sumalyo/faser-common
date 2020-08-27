@@ -5,19 +5,12 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
 
   atlas_subdir(EventFormats)
 
-  atlas_depends_on_subdirs (
-    PUBLIC
-    Exceptions
-  )
-
   atlas_add_library ( EventFormats
-  		    EventFormats/*.hpp EventFormats/*.icc ../Logging/include/*.hpp
+  		  EventFormats/*.hpp EventFormats/*.icc ../Logging/include/*.hpp
+        INTERFACE
 		    PUBLIC_HEADERS EventFormats 
 		    LINK_LIBRARIES Exceptions 
 		    )
-
-  # Need this because there are no source files
-  set_target_properties(EventFormats PROPERTIES LINKER_LANGUAGE CXX)
 
   atlas_add_executable( eventDump apps/eventDump.cxx 
       LINK_LIBRARIES EventFormats
