@@ -1,6 +1,4 @@
 
-#pragma region TrackerDataFragment
-
 bool TrackerDataFragment::m_debug = false;
 //
 // Constructor
@@ -178,9 +176,6 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
   return;
 }
 
-#pragma endregion TrackerDataFragment
-
-#pragma region Bitstream
 //
 // Constructor
 //
@@ -267,11 +262,6 @@ inline void Bitstream::RemoveBits(unsigned int n)
   }
 }
 
-
-#pragma endregion Bitstream
-
-#pragma region TRBEvent
-
 //
 //  Destructor to delete allocated memory
 //
@@ -282,10 +272,6 @@ inline TrackerDataFragment::TRBEvent::~TRBEvent()
     if (sctevt != nullptr) delete sctevt;
   }
 }
-
-#pragma endregion TRBEvent
-
-#pragma region SCTEvent
 
 inline SCTEvent::SCTEvent (uint8_t moduleID, unsigned int l1id, unsigned int bcid) 
 : m_moduleID(moduleID), m_bcid(bcid), m_l1id(l1id), m_complete(true), m_missingData(false), m_bcidMismatch(false), m_hasError(false)
@@ -414,8 +400,6 @@ inline const std::vector < uint8_t >& SCTEvent::GetErrors(size_t chip) const
   }
   return m_Errors[it->second];
 }
-
-#pragma endregion SCTEvent
 
 // non-member function to dump TrackerDataFragment
 

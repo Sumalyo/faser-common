@@ -62,8 +62,6 @@ struct TrackerDataFragment
 {
   public:
 
-#pragma region constants
-  
     const uint32_t MASK_TRBFRAME            = 0xC7000000;
     const uint32_t TRB_HEADER               = 0x00000000;
     const uint32_t TRB_TRAILER              = 0x01000000;
@@ -139,8 +137,7 @@ struct TrackerDataFragment
     static const uint32_t SIDES_PER_MODULE = 2;
     static const uint32_t STRIPS_PER_CHIP = 128;
     static const uint32_t STRIPS_PER_SIDE = STRIPS_PER_CHIP * CHIPS_PER_SIDE;
-#pragma endregion constants
-  
+ 
     TrackerDataFragment( const uint32_t *data, size_t size );
 
     void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap);
