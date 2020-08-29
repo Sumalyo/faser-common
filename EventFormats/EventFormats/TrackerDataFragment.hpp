@@ -74,21 +74,29 @@ struct TrackerDataFragment
     const uint32_t WORDTYPE_MODULEDATA_LED  = 0x80000000;
     const uint32_t WORDTYPE_MODULEDATA_LEDX = 0xC0000000;
     
-    const uint32_t MASK_TRBDATATYPE             = 0x7000000;
-    static const uint32_t TRBDATATYPE_BCID             = 0x0000000;
-    static const uint32_t TRBDATATYPE_TRBERROR         = 0x1000000;
-    static const uint32_t TRBDATATYPE_MODULEERROR_LED  = 0x2000000;
-    static const uint32_t TRBDATATYPE_MODULEERROR_LEDX = 0x3000000;
+    static const uint32_t MASK_TRBDATATYPE             = 0x07000000;
+    static const uint32_t TRBDATATYPE_EVENTID          = 0x00000000;
+    static const uint32_t TRBDATATYPE_BCID             = 0x00000000;
+    static const uint32_t TRBDATATYPE_TRBERROR         = 0x01000000;
+    static const uint32_t TRBDATATYPE_MODULEERROR_LED  = 0x02000000;
+    static const uint32_t TRBDATATYPE_MODULEERROR_LEDX = 0x03000000;
+    static const uint32_t TRBDATATYPE_CRC              = 0x01000000;
     
     const uint32_t MASK_FRAMECNT    = 0x38000000;
     const uint32_t RSHIFT_FRAMECNT  = 27;
     const uint32_t MASK_BCID     = 0xFFF;
     const uint32_t MASK_ERROR    = 0xF;
-    const uint32_t MASK_MODULEDATA_MODULEID    = 0x7000000;
+    const uint32_t MASK_MODULEDATA_CHANNEL     = 0x40000000;
+    const uint32_t RSHIFT_MODULEDATA_CHANNEL   = 30;
+    const uint32_t MASK_MODULEDATA_MODULEID    = 0x07000000;
     const uint32_t RSHIFT_MODULEDATA_MODULEID  = 24;
     const uint32_t MASK_MODULEDATA = 0xFFFFFF;
-    const uint32_t MASK_TRBDATA_MODULEID       = 0x0700000;
-    const uint32_t SHIFT_TRBDATA_MODULEID       = 20;
+    const uint32_t MASK_TRBDATA_MODULEID       = 0x00700000;
+    const uint32_t RSHIFT_TRBDATA_MODULEID       = 20;
+    const uint32_t MASK_TRBDATA_ERRORCHANNEL   = 0x01000000;
+    const uint32_t RSHIFT_TRBDATA_ERRORCHANNEL   = 24;
+    const uint32_t LSHIFT_ERROR_CHANNEL    = 7;
+    const uint32_t LSHIFT_ERROR_MODULE     = 4;
     const uint32_t MASK_EVNTCNT  = 0xFFFFFF;
     const uint32_t MASK_CRC      = 0xFFFFFF;
     const uint32_t END_OF_DAQ    = 0x7000EEE; // magic word
