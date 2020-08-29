@@ -84,6 +84,7 @@ struct TrackerDataFragment
     
     const uint32_t MASK_FRAMECNT    = 0x38000000;
     const uint32_t RSHIFT_FRAMECNT  = 27;
+    const uint32_t FRAME_COUNTER_CYCLE = 8;
     const uint32_t MASK_BCID     = 0xFFF;
     const uint32_t MASK_ERROR    = 0xF;
     const uint32_t MASK_MODULEDATA_CHANNEL     = 0x40000000;
@@ -150,11 +151,7 @@ struct TrackerDataFragment
 
     void DecodeModuleData(std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > dataMap);
 
-    bool valid() const 
-    {
-        if (m_size<sizeof(event.m_event_id) ) return false; //example. Eventually to check dimensions of data, check for error ids.
-        return true;
-    }
+    bool valid() const; 
 
     // getters
     uint32_t event_id() const { return event.m_event_id; }
@@ -175,6 +172,13 @@ struct TrackerDataFragment
     iterator begin() { return event.m_hits_per_module.begin(); }
     iterator end() { return event.m_hits_per_module.end(); }
 
+    bool has_trb_error() const { return event.m_has_trb_error; }
+    bool has_module_error() const { return event.m_module_error_ids.size() > 0; }
+    bool missing_event_id() const { return event.m_event_id_missing; }
+    bool missing_bcid() const { return event.m_bc_id_missing; }
+    bool missing_crc() const { return event.m_crc_missing; }
+    bool missing_frames() const { return event.m_frame_counter_invalid; }
+    bool unrecognized_frames() const { return event.m_unrecognized_frames; }
 
     //setters
     static void set_debug_on( bool debug = true ) { m_debug = debug; }
@@ -193,13 +197,18 @@ struct TrackerDataFragment
         TRBEvent() {}
         SCTEvent* GetModule(size_t moduleID) const { return m_hits_per_module[moduleID]; }
         void SetModule(size_t moduleID, SCTEvent* sctEvent) { m_hits_per_module[moduleID] = sctEvent; }
-        // void AddModule(SCTEvent* sctEvent) { m_hits_per_module.push_back(sctEvent); }
 
         ~TRBEvent();
 
         uint32_t m_event_id;
         uint32_t m_bc_id;
-        uint8_t m_trb_error_id;
+        bool m_has_trb_error {false};
+        bool m_event_id_missing {true};
+        bool m_bc_id_missing {true};
+        bool m_crc_missing {true};
+        bool m_frame_counter_invalid {false};
+        bool m_unrecognized_frames {false};
+        uint8_t m_trb_error_id {0};
         std::vector< uint8_t > m_module_error_ids;
         std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
         std::vector < SCTEvent* > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
