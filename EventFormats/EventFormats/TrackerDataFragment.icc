@@ -1,3 +1,10 @@
+/*
+  Copyright (C) 2019-2020 CERN for the benefit of the FASER collaboration
+*/
+
+///////////////////////////////////////////////////////////////////
+// TrackerDataFragment.icc, (c) FASER Detector software
+///////////////////////////////////////////////////////////////////
 
 bool TrackerDataFragment::m_debug = false;
 //

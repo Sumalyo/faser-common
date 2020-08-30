@@ -1,3 +1,11 @@
+/*
+  Copyright (C) 2019-2020 CERN for the benefit of the FASER collaboration
+*/
+
+///////////////////////////////////////////////////////////////////
+// DigitizerDataFragment.hpp, (c) FASER Detector software
+///////////////////////////////////////////////////////////////////
+
 #pragma once
 #include <map>
 #include <bitset>

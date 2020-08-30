@@ -1,3 +1,11 @@
+/*
+  Copyright (C) 2019-2020 CERN for the benefit of the FASER collaboration
+*/
+
+///////////////////////////////////////////////////////////////////
+// TLBDataFragment.hpp, (c) FASER Detector software
+///////////////////////////////////////////////////////////////////
+
 #pragma once
 #include <bitset>
 #include <cstring> //memcpy
