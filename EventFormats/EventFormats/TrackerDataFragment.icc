@@ -10,7 +10,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
   event.m_bc_id = 0xffff;
   uint32_t nextFrameCounter{0xf}; // invalid
 
-  for (size_t i=0; i<size/4;i++ )
+  for (size_t i = 0; i < size/4; i++)
   {
     uint32_t frameCounter {((data[i] & MASK_FRAMECNT)>>RSHIFT_FRAMECNT)};
     if ((i > 0) && (data[i] != TRB_END) && (frameCounter != nextFrameCounter))
@@ -38,13 +38,19 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
       {
         if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected" << std::endl;
         event.m_crc_missing = false;
-        continue; // To be implemented
+        if ( i < (size/4 - 1))
+        {
+          if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Unexpected data following CRC word will be ignored." << std::endl;
+        }
+        // Check of CRC to be implemented
+        break;   // for now, we are done
       }
       else
       {
         if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: UNRECOGNIZED TRB CONTROL FRAME: word " << i << " value: " << std::hex << std::setw(8) << std::setfill('0') << data[i] << std::dec << std::endl;
         event.m_unrecognized_frames = true;
         // To do: handle/notify error
+        continue;
       }
     }
 
