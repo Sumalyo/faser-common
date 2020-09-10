@@ -9,6 +9,7 @@
 #pragma once
 #include <bitset>
 #include "Exceptions/Exceptions.hpp"
+#include "Logging.hpp"
 #include <iomanip>
 #include <map>
 #include <chrono>

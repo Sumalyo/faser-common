@@ -22,10 +22,15 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
     uint32_t frameCounter {((data[i] & MASK_FRAMECNT)>>RSHIFT_FRAMECNT)};
     if ((i > 0) && (data[i] != TRB_END) && (frameCounter != nextFrameCounter))
     {
-      if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Invalid frame counter (" << frameCounter << ") detected; expected " << nextFrameCounter << std::endl;
       event.m_frame_counter_invalid = true;
+      THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: Invalid frame counter (" + std::to_string(frameCounter) + ") detected; expected" + std::to_string(nextFrameCounter)); 
     }
-    if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Tracker Word " << std::setw(4) << i << " (" << frameCounter << ") : " << std::hex << std::setw(8) << std::setfill('0') << data[i] << std::endl;
+    if (m_debug) 
+    { 
+      std::stringstream s;
+      s << std::hex << std::setw(8) << std::setfill('0') << data[i];
+      TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker Word " + std::to_string(i) + " (" + std::to_string(frameCounter) + ") : " +  s.str());
+    }
     nextFrameCounter = ++frameCounter % FRAME_COUNTER_CYCLE;
     if ((data[i] & MASK_WORDTYPE) == TRB_HEADER) 
     {
@@ -33,31 +38,31 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
       {
         event.m_event_id = data[i] & MASK_EVNTCNT;
         event.m_event_id_missing = false;
-        if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Word " << i << " sets event_id to " << event.m_event_id << std::endl;
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets event_id to " + std::to_string(event.m_event_id));
         continue;
       }
       else if (data[i] == TRB_END)
       {
-        if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: End of tracker event detected" << std::endl;  // not actually present in raw data
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: End of tracker event detected");  // not actually present in raw data
         break;
       }
       else if (((data[i] & MASK_TRBDATATYPE) == TRBDATATYPE_CRC) && event.m_crc_missing)
       {
-        if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected" << std::endl;
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected");
         event.m_crc_missing = false;
         if ( i < (size/4 - 1))
         {
-          if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Unexpected data following CRC word will be ignored." << std::endl;
+          if (m_debug) WARNING("TrackerDataFragment::TrackerDataFragment :: Unexpected data following CRC word will be ignored.");
         }
         // Check of CRC to be implemented
         break;   // for now, we are done
       }
       else
       {
-        if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: UNRECOGNIZED TRB CONTROL FRAME: word " << i << " value: " << std::hex << std::setw(8) << std::setfill('0') << data[i] << std::dec << std::endl;
         event.m_unrecognized_frames = true;
-        // To do: handle/notify error
-        continue;
+        std::stringstream s;
+        s << std::hex << std::setw(8) << std::setfill('0') << data[i];
+        THROW(TrackerDataException,  "TrackerDataFragment::TrackerDataFragment :: Unrecognized TRB control frame: word " + std::to_string(i) + " value: " + s.str() );
       }
     }
 
@@ -70,27 +75,25 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
           {
             event.m_bc_id = data[i] & MASK_BCID;
             event.m_bc_id_missing = false;
-            if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: Word " << i << " sets bc_id to " << event.m_bc_id << std::endl;
+            if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets bc_id to " + std::to_string(event.m_bc_id) );
           }
           else
           {
-            if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: REPEATED BCID detected: " << (data[i] & MASK_BCID) << std::endl;
+            if (m_debug) WARNING("TrackerDataFragment::TrackerDataFragment :: Repeated BCID detected: " + std::to_string(data[i] & MASK_BCID) );
             // TODO: handle the error
           }
           break;
         case TRBDATATYPE_TRBERROR:        
-          if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: TRB ERROR: " << (data[i] & MASK_ERROR) << std::endl; 
           event.m_trb_error_id = data[i] & MASK_ERROR;
           event.m_has_trb_error = true;  // Can this occur more than once?
-          break;
+          THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: TRB ERROR: " + std::to_string(data[i] & MASK_ERROR) ); 
         case TRBDATATYPE_MODULEERROR_LED:
         case TRBDATATYPE_MODULEERROR_LEDX:
           uint32_t module = (data[i] & MASK_TRBDATA_MODULEID) >> RSHIFT_TRBDATA_MODULEID;
           uint32_t channel = (data[i] & MASK_TRBDATA_ERRORCHANNEL) >> RSHIFT_TRBDATA_ERRORCHANNEL;
           uint32_t error = data[i] & MASK_ERROR;
           event.m_module_error_ids.push_back( (channel << LSHIFT_ERROR_CHANNEL) | (module << LSHIFT_ERROR_MODULE) | error );
-          if (m_debug) std::cout << "TrackerDataFragment::TrackerDataFragment :: LED(x) Module error: Channel " << channel << " Module " << module << " ErrID: " << error << std::endl; 
-          break;
+          THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: LED(x) Module error: Channel " + std::to_string(channel) + " Module " + std::to_string(module) + " ErrID: " + std::to_string(error));
       }
     }
     
@@ -111,37 +114,37 @@ inline bool TrackerDataFragment::valid() const
 {
   if (event.m_event_id_missing) 
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: event_id missing." << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: event_id missing.");
     return false;
   }
   if (event.m_bc_id_missing) 
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: bc_id missing." << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: bc_id missing.");
     return false;
   }
   if (event.m_crc_missing)
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: crc missing." << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: crc missing.");
     return false;
   }
   if (event.m_has_trb_error)
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: trb_error: " << event.m_trb_error_id << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: trb_error: " + std::to_string(event.m_trb_error_id));
     return false;                // TRB error
   }
   if (event.m_module_error_ids.size() > 0)
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: #module errors: " << event.m_module_error_ids.size() << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: #module errors: " + std::to_string(event.m_module_error_ids.size()) );
     return false;  // module error(s)
   }
   if (event.m_frame_counter_invalid)
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: frame counter invalid." << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: frame counter invalid.");
     return false;
   }
   if (event.m_unrecognized_frames)
   {
-    if (m_debug) std::cout << "TrackerDataFragment::valid :: found invalid frames." << std::endl;
+    if (m_debug) WARNING("TrackerDataFragment::valid :: found invalid frames.");
     return false;
   }
   return true;
@@ -153,7 +156,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
   {
     for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
     {
-      if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Decoding data for (" << static_cast<uint32_t>(module) << "," << static_cast<uint32_t>(LED) << ")." << std::endl;
+      if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Decoding data for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ")." );
       SCTEvent* sctEvent {nullptr};
 
       bool praeambleFound = false;
@@ -166,7 +169,12 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
       // long int eventCount = 0;
       while (bitstream.BitsAvailable())
       {
-        if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Data word = "<<std::hex << bitstream.GetWord32() <<std::endl;
+        if (m_debug)
+        {
+          std::stringstream s;
+          s << std::hex << bitstream.GetWord32();
+          TRACE("TrackerDataFragment::DecodeModuleData :: Data word = " + s.str());
+        }
         if ((bitstream.GetWord32() & MASK_MODULE_HEADER) == TAG_MODULE_HEADER){
           // eventCount++;
           // if (eventCount %5000 == 0 ){ 
@@ -178,25 +186,22 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           unsigned int l1id = ((bitstream.GetWord32() >> RSHIFT_MODULE_L1ID)&MASK_MODULE_L1ID);
           unsigned int bcid = ((bitstream.GetWord32() >> RSHIFT_MODULE_BCID)&MASK_MODULE_BCID);
 
-          if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Module Header: L1D = "<<std::dec<< l1id <<" BCID = "<< bcid << std::endl;
-          if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData ::      removed bits bfore finding Module Header = "<<removedBits<<std::endl;
-
+          if (m_debug) 
+          {
+            TRACE("TrackerDataFragment::DecodeModuleData :: Module Header: L1D = " + std::to_string(l1id)  + " BCID = " + std::to_string(bcid));
+            TRACE("TrackerDataFragment::DecodeModuleData ::      removed bits bfore finding Module Header = " + std::to_string(removedBits) );
+          }
           if (LED==0)
           {
             // process first half of module data (led / ledx line)
-            //if (m_Events.size() == 0){} // first event
-            //trbEvent = new TRBEvent(l1id, bcid);
             sctEvent = new SCTEvent(module, l1id, bcid);
-            // event.AddModule(sctEvent);
             event.SetModule(module, sctEvent);
-            if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" << static_cast<uint32_t>(module) << "," << static_cast<uint32_t>(LED) << ")." << std::endl;
-            //trbEvent->AddModule(module, sctEvent);
-            //m_Events.push_back(trbEvent);
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           else
           {
             sctEvent = event.GetModule(module);
-            if (m_debug && (sctEvent != nullptr)) std::cout << "TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" << static_cast<uint32_t>(module) << "," << static_cast<uint32_t>(LED) << ")." << std::endl;
+            if (m_debug && (sctEvent != nullptr)) TRACE("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           
           removedBits = 0;
@@ -206,7 +211,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         }
         if (praeambleFound && (sctEvent == nullptr))
         {
-          if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: SCTEvent data object for (" << static_cast<uint32_t>(module) << "," << static_cast<uint32_t>(LED) << ") not found." << std::endl;
+          if (m_debug) WARNING("TrackerDataFragment::DecodeModuleData :: SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ") not found.");
           praeambleFound = false;
         }
         if (!praeambleFound)
@@ -219,7 +224,12 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         {
           unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_ERR)&MASK_CHIPADD_ERR);
           unsigned int err = ((bitstream.GetWord32() >> RSHIFT_ERR)&MASK_ERR);
-          if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Module Data: ERROR code 0x"<<std::hex<< err << " for chip "<<std::dec<< chip <<std::endl;
+          if (m_debug) 
+          {
+            std::stringstream s;
+            s << std::hex << err;
+            ERROR("TrackerDataFragment::DecodeModuleData :: Module Data: ERROR code 0x" + s.str() + " for chip " + std::to_string(chip));
+          }
           sctEvent->AddError(chip, err);
           bitstream.RemoveBits(11);
           continue;
@@ -238,29 +248,29 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           {
             // data packet
             // !!! Trailer looks the same in this definition! => Always check if a trailer is found
-            if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER){
-            if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Module Trailer "<< std::endl;
-            bitstream.RemoveBits(16);
-            praeambleFound = false;
-            
-            continue;
+            if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER)
+            {
+              if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Module trailer found");
+              bitstream.RemoveBits(16);
+              praeambleFound = false;      
+              continue;
             }
             unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
             sctEvent->AddHit(chip, channel++, hit);
-            if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: Hit pattern = "<<hit<<std::endl;
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Hit pattern = " + std::to_string(hit) );
             bitstream.RemoveBits(4);
           }
           continue;
         }
         if ((bitstream.GetWord32() & MASK_MODULE_NODATA) == TAG_MODULE_NODATA && praeambleFound) 
         {
-          if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: No Hit packet"<<std::endl;
+          if (m_debug) WARNING("TrackerDataFragment::DecodeModuleData :: No Hit packet");
           bitstream.RemoveBits(3);
           continue;
         }
         // data is only valid after a praeamble (aka header) was found. Otherwise praeamble might be mistaken as an error code
         praeambleFound = false;
-        if (m_debug) std::cout << "TrackerDataFragment::DecodeModuleData :: WARNING: unable to decode bitstream. Removing 1 bit until alignment is found again."<<std::endl;
+        if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: WARNING: unable to decode bitstream. Removing 1 bit until alignment is found again.");
         bitstream.RemoveBits (1);          
       }
     }
@@ -288,8 +298,7 @@ inline Bitstream::Bitstream(std::vector<uint32_t> data) : m_currentBuffer{0}, m_
   m_bitsAvailable = (32 - m_usedBitsPerWord);
   // now we fill the remaining bits of the buffer
   if (m_bitsUsedOfNextWord > m_usedBitsPerWord) {
-    std::cout << "Bitstream::Bitstream :: FATAL: bitsUsedOfNextWord too large!"<<std::endl;
-    throw;
+    THROW(TrackerDataException, "Bitstream::Bitstream :: FATAL: bitsUsedOfNextWord too large!");
   }
   if (m_bitstreamData.size() == 0){ // no more data
     return;
@@ -416,9 +425,9 @@ inline void SCTEvent::AddError (unsigned int chip, unsigned int err)
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
     m_Errors.back().push_back(0xff);
-    std::cout << "SCTEvent::AddError :: ERROR: AddError(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
-    // std::cout << "Known IDs: "<<std::endl;
-    return;
+    std::stringstream s;
+    s << std::hex << chip;
+    THROW(TrackerDataException, "SCTEvent::AddError :: ERROR: AddError(): passed chipID is not known! chipID = 0x" + s.str());
   }
   m_Errors[it->second].push_back(err);
 }
@@ -438,10 +447,11 @@ inline void SCTEvent::AddHit (unsigned int chip, unsigned int strip, unsigned in
     //     m_Hits.back().push_back(std::make_pair(chip, strip++));
     //   }
     // }
-    std::cout << "SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
+    std::stringstream s;
+    s << std::hex << chip;
     m_complete = false;
     m_missingData = true;
-    return;
+    THROW(TrackerDataException, "SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
   }
   m_Hits[it->second].push_back(std::make_pair(strip, pattern));
 }
@@ -466,8 +476,9 @@ inline unsigned int SCTEvent::GetNHits(size_t chip) const
     if (chip == 0){
       return m_Hits.back().size(); // unknown chip occurences
     }
-    std::cout << "SCTEvent::GetNHits :: ERROR: passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
-    throw;
+    std::stringstream s;
+    s << std::hex << chip;
+    THROW(TrackerDataException, "SCTEvent::GetNHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Hits[it->second].size();
 }
@@ -478,8 +489,9 @@ inline const std::vector < std::pair<uint8_t, uint8_t> >& SCTEvent::GetHits(size
 {
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
-    std::cout << "SCTEvent::GetHits :: ERROR: passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
-    throw;
+    std::stringstream s;
+    s << std::hex << chip;
+    THROW(TrackerDataException, "SCTEvent::GetHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Hits[it->second];
 }
@@ -490,8 +502,9 @@ inline const std::vector < uint8_t >& SCTEvent::GetErrors(size_t chip) const
 {
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
-    std::cout << "SCTEvent::GetErrors :: ERROR: passed chipID is not known! chipID = 0x"<<std::hex<<chip<<std::endl;
-    throw;
+    std::stringstream s;
+    s << std::hex << chip;
+    THROW(TrackerDataException, "SCTEvent::GetErrors :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Errors[it->second];
 }
