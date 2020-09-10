@@ -2,8 +2,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   # Calypso/Athena build
 
   message("EventFormats: Calypso")
-  message(${CMAKE_CURRENT_SOURCE_DIR})
-  message(${CMAKE_INSTALL_INCLUDEDIR})
 
   atlas_subdir(EventFormats)
 
@@ -34,5 +32,5 @@ else()
   target_link_libraries(EventFormats INTERFACE Exceptions )
 
   add_faser_executable(eventDump apps/eventDump.cxx)
-  target_link_libraries(eventDump EventFormats)
+  target_link_libraries(eventDump EventFormats Logging)
 endif()
