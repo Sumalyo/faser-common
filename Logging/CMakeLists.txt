@@ -2,6 +2,9 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   # Calypso/Athena build
   # Do nothing, we will just include the Logging include in EventFormats path
 
+  message("Logging: Calypso")
+
+
 else()
   # Online build
 
