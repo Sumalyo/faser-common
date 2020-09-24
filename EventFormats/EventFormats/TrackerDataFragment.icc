@@ -335,7 +335,7 @@ inline void Bitstream::RemoveBits(unsigned int n)
   } else { // need more bits than in next word available
     // std::cout <<"Not enough usable bits in current word. "<<std::endl;
     int missingBits = ( static_cast<int>(m_bitsUsedOfNextWord + n) - static_cast<int>(m_usedBitsPerWord));
-    // std::cout << "   Left shift of word by "<<std::dec<<missingBits<<std::endl;g
+    // std::cout << "   Left shift of word by "<<std::dec<<missingBits<<std::endl;
     
     m_currentBuffer |= (m_bitstreamData[0] << ( missingBits)) & mask;
     m_bitstreamData.erase(m_bitstreamData.begin());
