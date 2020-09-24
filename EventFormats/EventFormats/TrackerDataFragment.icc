@@ -334,7 +334,7 @@ inline void Bitstream::RemoveBits(unsigned int n)
     }
   } else { // need more bits than in next word available
     // std::cout <<"Not enough usable bits in current word. "<<std::endl;
-    int missingBits = ( (m_bitsUsedOfNextWord + n) -m_usedBitsPerWord);
+    int missingBits = ( static_cast<int>(m_bitsUsedOfNextWord + n) - static_cast<int>(m_usedBitsPerWord));
     // std::cout << "   Left shift of word by "<<std::dec<<missingBits<<std::endl;
     
     m_currentBuffer |= (m_bitstreamData[0] << ( missingBits)) & mask;
@@ -346,11 +346,11 @@ inline void Bitstream::RemoveBits(unsigned int n)
       return; // no more data
     }
     // still need to copy n-(m_usedBitsPerWord-m_bitsUsedOfNextWord) bits
-    while ((int)(missingBits - m_usedBitsPerWord) > 0){
+    while (missingBits - static_cast<int>(m_usedBitsPerWord) > 0){
       // copy full word, aligned with last valid bit
       // std::cout << "   Left shift of word by "<<std::dec<<(missingBits - m_usedBitsPerWord)<<std::endl;
-      m_currentBuffer |= (m_bitstreamData[0] << (missingBits - m_usedBitsPerWord) );
-      missingBits -= m_usedBitsPerWord;
+      m_currentBuffer |= (m_bitstreamData[0] << (static_cast<uint32_t>(missingBits) - m_usedBitsPerWord) );
+      missingBits -= static_cast<int>(m_usedBitsPerWord);
       m_bitstreamData.erase(m_bitstreamData.begin());
       m_bitsUsedOfNextWord = 0;
       if (m_bitstreamData.size() == 0){
@@ -360,8 +360,8 @@ inline void Bitstream::RemoveBits(unsigned int n)
       }
     }
     // std::cout << "   Right shift of next word by "<<std::dec<<(m_usedBitsPerWord - missingBits )<<std::endl;
-    m_currentBuffer |= (m_bitstreamData[0] >> (m_usedBitsPerWord - missingBits ) );
-    m_bitsUsedOfNextWord += (missingBits);
+    m_currentBuffer |= (m_bitstreamData[0] >> (m_usedBitsPerWord - static_cast<uint32_t>(missingBits) ) );
+    m_bitsUsedOfNextWord += static_cast<uint32_t>(missingBits);
     
   }
 }
