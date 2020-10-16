@@ -6,7 +6,6 @@
 // TrackerDataFragment.icc, (c) FASER Detector software
 ///////////////////////////////////////////////////////////////////
 
-bool TrackerDataFragment::m_debug = false;
 //
 // Constructor
 //

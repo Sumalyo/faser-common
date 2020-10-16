@@ -176,8 +176,8 @@ struct TrackerDataFragment
     using const_iterator = std::vector<SCTEvent*>::const_iterator;
     using iterator = std::vector<SCTEvent*>::iterator;
 
-    const_iterator cbegin() { return event.m_hits_per_module.cbegin(); }
-    const_iterator cend() { return event.m_hits_per_module.cend(); }
+    const_iterator cbegin() const { return event.m_hits_per_module.cbegin(); }
+    const_iterator cend() const { return event.m_hits_per_module.cend(); }
     iterator begin() { return event.m_hits_per_module.begin(); }
     iterator end() { return event.m_hits_per_module.end(); }
 
@@ -198,7 +198,6 @@ struct TrackerDataFragment
 
   private:
     size_t m_size;
-    static bool m_debug;
 
     struct TRBEvent 
     {
@@ -227,6 +226,7 @@ struct TrackerDataFragment
         TRBEvent& operator=(const TRBEvent& other) = delete;
 
     }  event;
+    inline static bool m_debug = false;
 
 };
 
