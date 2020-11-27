@@ -10,7 +10,12 @@
 #include <cstring> //memcpy, memset
 #include "Exceptions/Exceptions.hpp"
 
-#define MONITORING_HEADER 0xFEAD0050
+#define MONITORING_HEADER_V1 0xFEAD0050
+#define MONITORING_HEADER_V2 0xFEAD0005
+#define MASK_EVENT_ID 0xFFFFFF
+#define MASK_BC_ID 0xFFF
+#define MASK_TRIGLINE 0xFFFFFF
+#define MASK_COUNTER 0xFFFFFF
 
 class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
@@ -19,6 +24,7 @@ struct TLBMonitoringFragment {
   TLBMonitoringFragment( const uint32_t *data, size_t size ) {
     m_size = size;
     m_debug = false;
+    event.m_header = 0x0;
     event.m_event_id = 0xffffff;
     event.m_orbit_id = 0xffffffff;
     event.m_bc_id = 0xffff;
@@ -29,55 +35,65 @@ struct TLBMonitoringFragment {
     event.m_busy_veto_counter = 0xffffff;
     event.m_rate_limiter_veto_counter = 0xffffff;
     event.m_bcr_veto_counter = 0xffffff;
+    event.m_digitizer_busy_counter = 0xffffff;
     memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
+    if (data[0] == MONITORING_HEADER_V2) m_version=0x2; 
   }
 
   bool valid() const {
-    if (m_size==sizeof(TLBMonEvent) && header()== MONITORING_HEADER ) return true;
+    if ( header()== MONITORING_HEADER_V1 ) {
+      if (m_size==(sizeof(TLBMonEvent)-8)) return true; } //FIXME
+    if ( header()== MONITORING_HEADER_V2 ) {
+      if (m_size==sizeof(TLBMonEvent)) return true; }
     return false;
   }
 
   public:
     // getters
     uint32_t header() const { return event.m_header; }
-    uint32_t event_id() const { return event.m_event_id; }
+    uint32_t event_id() const { return event.m_event_id & MASK_EVENT_ID; }
     uint32_t orbit_id() const {
       if ( valid() || m_debug )  return event.m_orbit_id;
       THROW(TLBMonException, "Data not valid");
     }
-    uint32_t bc_id() const { return event.m_bc_id; }
+    uint32_t bc_id() const { return event.m_bc_id & MASK_BC_ID; }
     uint32_t tbp( uint8_t trig_line ) const { 
       if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
-      if ( valid() || m_debug ) return *(event.m_tbp+trig_line);
+      if ( valid() || m_debug ) return *(event.m_tbp+trig_line)&MASK_TRIGLINE;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t tap( uint8_t trig_line ) const { 
       if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
-      if ( valid() || m_debug ) return *(event.m_tap+trig_line);
+      if ( valid() || m_debug ) return *(event.m_tap+trig_line)&MASK_TRIGLINE;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t tav( uint8_t trig_line ) const { 
       if ( trig_line >= max_trig_line ) THROW(TLBMonException, "index out of range");
-      if ( valid() || m_debug ) return *(event.m_tav+trig_line);
+      if ( valid() || m_debug ) return *(event.m_tav+trig_line)&MASK_TRIGLINE;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t deadtime_veto_counter() const {
-      if ( valid() || m_debug )  return event.m_deadtime_veto_counter;
+      if ( valid() || m_debug )  return event.m_deadtime_veto_counter&MASK_COUNTER;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t busy_veto_counter() const {
-      if ( valid() || m_debug )  return event.m_busy_veto_counter;
+      if ( valid() || m_debug )  return event.m_busy_veto_counter&MASK_COUNTER;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t rate_limiter_veto_counter() const {
-      if ( valid() || m_debug )  return event.m_rate_limiter_veto_counter;
+      if ( valid() || m_debug )  return event.m_rate_limiter_veto_counter&MASK_COUNTER;
       THROW(TLBMonException, "Data not valid");
     }
     uint32_t bcr_veto_counter() const {
-      if ( valid() || m_debug )  return event.m_bcr_veto_counter;
+      if ( valid() || m_debug )  return event.m_bcr_veto_counter&MASK_COUNTER;
+      THROW(TLBMonException, "Data not valid");
+    }
+    uint32_t digitizer_busy_counter() const {
+      if ( valid() || m_debug )  return event.m_digitizer_busy_counter&MASK_COUNTER;
       THROW(TLBMonException, "Data not valid");
     }
     size_t size() const { return m_size; }
+    uint8_t version() const { return m_version; }
     //setters
     void set_debug_on( bool debug = true ) { m_debug = debug; }
 
@@ -95,8 +111,11 @@ struct TLBMonitoringFragment {
       uint32_t m_busy_veto_counter;
       uint32_t m_rate_limiter_veto_counter;
       uint32_t m_bcr_veto_counter;
+      uint32_t m_digitizer_busy_counter;
+      uint32_t m_checksum;
     }  __attribute__((__packed__)) event;
     size_t m_size;
+    uint8_t m_version;
     bool m_debug;
 };
 
