@@ -29,7 +29,9 @@ else()
   # Online build
   add_library(EventFormats INTERFACE)
   target_include_directories(EventFormats INTERFACE ./)
+  target_include_directories(EventFormats INTERFACE ${CMAKE_SOURCE_DIR}/GPIOBase)
   target_link_libraries(EventFormats INTERFACE Exceptions Logging )
+  target_link_libraries(EventFormats INTERFACE FletcherChecksum)
 
   add_faser_executable(eventDump apps/eventDump.cxx)
   target_link_libraries(eventDump EventFormats )

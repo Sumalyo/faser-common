@@ -92,6 +92,7 @@ struct TLBMonitoringFragment {
       if ( valid() || m_debug )  return event.m_digitizer_busy_counter&MASK_COUNTER;
       THROW(TLBMonException, "Data not valid");
     }
+    uint32_t checksum() const { return event.m_checksum & MASK_CHECKSUM; }
     size_t size() const { return m_size; }
     uint8_t version() const { return m_version; }
     //setters

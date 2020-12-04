@@ -10,6 +10,7 @@
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
+#include "GPIOBase/FletcherChecksum.h"
 
 #define TRIGGER_HEADER_V1 0xFEAD000A
 #define TRIGGER_HEADER_V2 0xFEAD00A0
@@ -18,8 +19,11 @@
 #define MASK_TBP 0x3F
 #define MASK_TAP_FROM_TBP 0xC0
 #define MASK_TAP 0x3F
+#define MASK_CHECKSUM 0xFFFFFF
 
 class TLBDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
+
+FASER::FletcherChecksum fletcher = FASER::FletcherChecksum();
 
 struct TLBDataFragment { 
   
@@ -36,10 +40,23 @@ struct TLBDataFragment {
     event.m_input_bits_next_clk = 0;
     memcpy(&event, data, std::min(size, sizeof(TLBEvent)));
     m_version=0x1;
+    m_checksum_error = false; // until proven guilty
     if (data[0] == TRIGGER_HEADER_V2) m_version=0x2; 
+    if (valid()) {
+      fletcher.InitialiseChecksum();
+      fletcher.AddData(data, size);
+      auto checksumCal = fletcher.ReturnChecksum(); 
+      if ( m_version > 0x1){
+        if (checksumCal != checksum()){
+          m_checksum_error = true;
+        }
+        else m_checksum_error = false;
+      }
+    }
   }
 
   bool valid() const {
+    if ( m_checksum_error ) return false;
     if ( header()== TRIGGER_HEADER_V1 ) {
       if (m_size==(sizeof(TLBEvent)-4)) return true; } //FIXME
     if ( header()== TRIGGER_HEADER_V2 ) {
@@ -82,6 +99,8 @@ struct TLBDataFragment {
       if ( valid() || m_debug )  return event.m_input_bits_next_clk;
       THROW(TLBDataException, "Data not valid");
     }
+    uint32_t checksum() const { return event.m_checksum & MASK_CHECKSUM; }
+    bool has_checksum_error() const { return m_checksum_error; }
     size_t size() const { return m_size; }
     uint8_t version() const { return m_version; }
     //setters
@@ -102,6 +121,7 @@ struct TLBDataFragment {
     size_t m_size;
     uint8_t m_version;
     bool m_debug;
+    bool m_checksum_error;
 };
 
 inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event) {
@@ -118,6 +138,7 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event)
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
+    out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
   }
 
  return out;
