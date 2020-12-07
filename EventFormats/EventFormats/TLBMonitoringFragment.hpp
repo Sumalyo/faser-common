@@ -20,18 +20,16 @@
 namespace TLBMonFormat {
 class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
-FASER::FletcherChecksum fletcher = FASER::FletcherChecksum();
-
-const uint32_t FID_EVENT_ID = 0x1<<28;
-const uint32_t FID_BC_ID = 0x3<<28;
-const uint32_t FID_TBP = 0x4<<28;
-const uint32_t FID_TAP = 0x5<<28;
-const uint32_t FID_TAV = 0x6<<28;
-const uint32_t FID_CRC = 0xD<<28;
+const uint32_t FID_EVENT_ID = 0x10000000;
+const uint32_t FID_BC_ID = 0x30000000;
+const uint32_t FID_TBP = 0x40000000;
+const uint32_t FID_TAP = 0x50000000;
+const uint32_t FID_TAV = 0x60000000;
+const uint32_t FID_CRC = 0xD0000000;
 
 const uint8_t MAX_TRIG_LINE = 6;
 
-typedef struct TLBMonEventV1 {
+struct TLBMonEventV1 {
   uint32_t m_header;
   uint32_t m_event_id;
   uint32_t m_orbit_id;
@@ -65,7 +63,7 @@ struct TLBMonitoringFragment {
     memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
     m_version=0x2;
     if (data[0] == MONITORING_HEADER_V1) m_version=0x1; 
-    m_crc_calculated = fletcher.ReturnChecksum(data, size);
+    m_crc_calculated = FASER::ReturnFletcherChecksum(data, size);
   }
 
   bool frame_check() const{
