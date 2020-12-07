@@ -87,7 +87,7 @@ struct TLBDataFragment {
     uint32_t bc_id() const { return event.v1.m_bc_id & MASK_DATA; }
     uint8_t  tap() const {
       if ( valid() || m_debug )  {
-        if (m_version < 0x2) return event.v1.m_tbptap & MASK_TAP_V1;
+        if (m_version < 0x2) return (event.v1.m_tbptap & MASK_TAP_V1)>>8;
         else return (event.v1.m_tbptap&MASK_TAP_V2)>>6;
       }
       THROW(TLBDataException, "Data not valid");
