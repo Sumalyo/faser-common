@@ -6,6 +6,8 @@
 #include "EventFormats/TrackerDataFragment.hpp"
 
 using namespace DAQFormats;
+using namespace TLBDataFormat;
+using namespace TLBMonFormat;
 
 static void usage() {
    std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] <filename>"<<std::endl;

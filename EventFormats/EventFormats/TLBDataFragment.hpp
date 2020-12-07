@@ -14,93 +14,103 @@
 
 #define TRIGGER_HEADER_V1 0xFEAD000A
 #define TRIGGER_HEADER_V2 0xFEAD00A0
-#define MASK_EVENT_ID 0xFFFFFF
-#define MASK_BC_ID 0xFFF
+#define MASK_DATA 0xFFFFFF
 #define MASK_TBP 0x3F
-#define MASK_TAP_FROM_TBP 0xC0
-#define MASK_TAP 0x3F
-#define MASK_CHECKSUM 0xFFFFFF
+#define MASK_TAP_V1 0x3F00
+#define MASK_TAP_V2 0xFC0
+#define MASK_FRAMEID_32b 0xF0000000
+#define MASK_FRAMEID_16b 0xF000
 
+namespace TLBDataFormat {
 class TLBDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 FASER::FletcherChecksum fletcher = FASER::FletcherChecksum();
+
+const uint32_t FID_EVENT_ID = 0x1<<28;
+const uint32_t FID_BC_ID = 0x3<<28;
+const uint32_t FID_TBPTAP = 0xC<<12;
+const uint32_t FID_CRC = 0xE<<28;
+
+typedef struct TLBEventV1{
+ uint32_t m_header;
+ uint32_t m_event_id;
+ uint32_t m_orbit_id;
+ uint32_t m_bc_id;
+ uint8_t  m_input_bits_next_clk;
+ uint8_t  m_input_bits;
+ uint16_t  m_tbptap;
+} __attribute__((__packed__));
 
 struct TLBDataFragment { 
   
   TLBDataFragment( const uint32_t *data, size_t size ) {
     m_size = size;
     m_debug = false;
-    event.m_header = 0x0;
-    event.m_event_id = 0xffffff;
-    event.m_orbit_id = 0xffffffff;
-    event.m_bc_id = 0xffff;
-    event.m_tbp = 0;
-    event.m_tap  = 0;
-    event.m_input_bits = 0;
-    event.m_input_bits_next_clk = 0;
+    event.v1.m_header = 0x0;
+    event.v1.m_event_id = 0xffffff;
+    event.v1.m_orbit_id = 0xffffffff;
+    event.v1.m_bc_id = 0xffff;
+    event.v1.m_input_bits = 0;
+    event.v1.m_input_bits_next_clk = 0;
+    event.v1.m_tbptap = 0;
     memcpy(&event, data, std::min(size, sizeof(TLBEvent)));
-    m_version=0x1;
-    m_checksum_error = false; // until proven guilty
-    if (data[0] == TRIGGER_HEADER_V2) m_version=0x2; 
-    if (valid()) {
-      fletcher.InitialiseChecksum();
-      fletcher.AddData(data, size);
-      auto checksumCal = fletcher.ReturnChecksum(); 
-      if ( m_version > 0x1){
-        if (checksumCal != checksum()){
-          m_checksum_error = true;
-        }
-        else m_checksum_error = false;
-      }
-    }
+    m_version=0x2;
+    if (data[0] == TRIGGER_HEADER_V1) m_version=0x1; 
+    m_crc_calculated = fletcher.ReturnChecksum(data, size);
+  }
+
+  bool frame_check() const{
+    if (version() < 0x2) return true;
+    if (((event.v1.m_event_id&MASK_FRAMEID_32b)) != FID_EVENT_ID) return false;
+    if (((event.v1.m_bc_id&MASK_FRAMEID_32b)) != FID_BC_ID) return false;
+    if (((event.v1.m_tbptap&MASK_FRAMEID_16b)) != FID_TBPTAP) return false;
+    if (((event.m_checksum&MASK_FRAMEID_32b)) != FID_CRC) return false;
+    return true;
   }
 
   bool valid() const {
-    if ( m_checksum_error ) return false;
-    if ( header()== TRIGGER_HEADER_V1 ) {
-      if (m_size==(sizeof(TLBEvent)-4)) return true; } //FIXME
-    if ( header()== TRIGGER_HEADER_V2 ) {
-      if (m_size==sizeof(TLBEvent)) return true; }
+    if ( version() > 0x1 ){
+      if (m_crc_calculated != checksum()) return false;
+      if (!frame_check()) return false;
+      if (m_size==sizeof(TLBEvent)) return true;
+    }
+    else if (m_size==sizeof(TLBEventV1)) return true; // v1 has no trailer
     return false;
   }
 
   public:
     // getters
-    uint32_t header() const { return event.m_header; }
-    uint32_t event_id() const { return event.m_event_id & MASK_EVENT_ID; }
+    uint32_t header() const { return event.v1.m_header; }
+    uint32_t event_id() const { return event.v1.m_event_id & MASK_DATA; }
     uint32_t orbit_id() const {
-      if ( valid() || m_debug )  return event.m_orbit_id;
+      if ( valid() || m_debug )  return event.v1.m_orbit_id;
       THROW(TLBDataException, "Data not valid");
     }
-    uint32_t bc_id() const { return event.m_bc_id & MASK_BC_ID; }
+    uint32_t bc_id() const { return event.v1.m_bc_id & MASK_DATA; }
     uint8_t  tap() const {
       if ( valid() || m_debug )  {
-        if (m_version < 0x2) return event.m_tap;
-        else {
-          uint8_t tap = (event.m_tap << 2); // FIXME
-          uint8_t tap_part = (event.m_tbp & MASK_TAP_FROM_TBP)>>4;
-          tap |= tap_part;
-          return tap & MASK_TAP;
-        }
+        if (m_version < 0x2) return event.v1.m_tbptap & MASK_TAP_V1;
+        else return (event.v1.m_tbptap&MASK_TAP_V2)>>6;
       }
       THROW(TLBDataException, "Data not valid");
     }
     uint8_t  tbp() const {
       if ( valid() || m_debug ) {;
-        return event.m_tbp & MASK_TBP;
+        return event.v1.m_tbptap & MASK_TBP;
       }
       THROW(TLBDataException, "Data not valid");
     }
     uint8_t  input_bits() const {
-      if ( valid() || m_debug )  return event.m_input_bits;
+      if ( valid() || m_debug )  return event.v1.m_input_bits;
       THROW(TLBDataException, "Data not valid");
     }
     uint8_t  input_bits_next_clk() const {
-      if ( valid() || m_debug )  return event.m_input_bits_next_clk;
+      if ( valid() || m_debug )  return event.v1.m_input_bits_next_clk;
       THROW(TLBDataException, "Data not valid");
     }
-    uint32_t checksum() const { return event.m_checksum & MASK_CHECKSUM; }
-    bool has_checksum_error() const { return m_checksum_error; }
+    uint32_t checksum() const { return event.m_checksum & MASK_DATA; }
+    bool has_checksum_error() const { return (m_crc_calculated != checksum()); }
+    bool has_frameid_error() const { return !frame_check();}
     size_t size() const { return m_size; }
     uint8_t version() const { return m_version; }
     //setters
@@ -108,23 +118,17 @@ struct TLBDataFragment {
 
   private:
     struct TLBEvent {
-      uint32_t m_header;
-      uint32_t m_event_id;
-      uint32_t m_orbit_id;
-      uint32_t m_bc_id;
-      uint8_t  m_input_bits_next_clk;
-      uint8_t  m_input_bits;
-      uint8_t  m_tbp;
-      uint8_t  m_tap;
+      TLBEventV1 v1;
       uint32_t m_checksum;
     }  __attribute__((__packed__)) event;
     size_t m_size;
     uint8_t m_version;
     bool m_debug;
-    bool m_checksum_error;
+    uint32_t m_crc_calculated;
 };
+}
 
-inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event) {
+inline std::ostream &operator<<(std::ostream &out, const TLBDataFormat::TLBDataFragment &event) {
   try {
     out
     <<std::setw(22)<<" event_id: "<<std::setfill(' ')<<std::setw(32)<<event.event_id()<<std::setfill(' ')<<std::endl
@@ -134,11 +138,12 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFragment &event)
     <<std::setw(22)<<" TBP: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<6>(event.tbp())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" input_bits: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" input_bits_next_clk: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits_next_clk())<<std::setfill(' ')<<std::endl;
-  } catch ( TLBDataException& e ) {
+  } catch ( TLBDataFormat::TLBDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
     out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
+    out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
   }
 
  return out;
