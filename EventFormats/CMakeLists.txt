@@ -29,13 +29,7 @@ else()
   # Online build
   add_library(EventFormats INTERFACE)
   target_include_directories(EventFormats INTERFACE ./)
-  if (${CMAKE_PROJECT_NAME} STREQUAL "daqling_top")
-    target_include_directories(EventFormats INTERFACE ${CMAKE_SOURCE_DIR}/gpiodrivers/GPIOBase)
-  else ()
-    target_include_directories(EventFormats INTERFACE ${CMAKE_SOURCE_DIR}/GPIOBase)
-  endif()
   target_link_libraries(EventFormats INTERFACE Exceptions Logging )
-  target_link_libraries(EventFormats INTERFACE FletcherChecksum)
 
   add_faser_executable(eventDump apps/eventDump.cxx)
   target_link_libraries(eventDump EventFormats )

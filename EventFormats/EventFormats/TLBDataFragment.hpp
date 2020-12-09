@@ -10,7 +10,7 @@
 #include <bitset>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
-#include "GPIOBase/FletcherChecksum.h"
+#include "FletcherChecksum.hpp"
 
 #define TRIGGER_HEADER_V1 0xFEAD000A
 #define TRIGGER_HEADER_V2 0xFEAD00A0
@@ -54,7 +54,7 @@ struct TLBDataFragment {
     memcpy(&event, data, std::min(size, sizeof(TLBEvent)));
     m_version=0x2;
     if (data[0] == TRIGGER_HEADER_V1) m_version=0x1; 
-    m_crc_calculated = FASER::ReturnFletcherChecksum(data, size);
+    m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
   }
 
   bool frame_check() const{

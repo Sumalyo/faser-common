@@ -9,6 +9,7 @@
 #pragma once
 #include <cstring> //memcpy, memset
 #include "Exceptions/Exceptions.hpp"
+#include "FletcherChecksum.hpp"
 
 #define MONITORING_HEADER_V1 0xFEAD0050
 #define MONITORING_HEADER_V2 0xFEAD0005
@@ -63,7 +64,7 @@ struct TLBMonitoringFragment {
     memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
     m_version=0x2;
     if (data[0] == MONITORING_HEADER_V1) m_version=0x1; 
-    m_crc_calculated = FASER::ReturnFletcherChecksum(data, size);
+    m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
   }
 
   bool frame_check() const{
