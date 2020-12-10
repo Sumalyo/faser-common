@@ -55,6 +55,7 @@ struct TLBDataFragment {
     m_version=0x2;
     if (data[0] == TRIGGER_HEADER_V1) m_version=0x1; 
     m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
+    m_verified = false;
   }
 
   bool frame_check() const{
@@ -67,13 +68,16 @@ struct TLBDataFragment {
   }
 
   bool valid() const {
+    if (m_verified) return m_valid;
+    m_valid = true;
     if ( version() > 0x1 ){
-      if (m_crc_calculated != checksum()) return false;
-      if (!frame_check()) return false;
-      if (m_size==sizeof(TLBEvent)) return true;
+      if (m_crc_calculated != checksum()) m_valid = false;
+      if (!frame_check()) m_valid = false;
+      if (m_size!=sizeof(TLBEvent)) m_valid = false;
     }
-    else if (m_size==sizeof(TLBEventV1)) return true; // v1 has no trailer
-    return false;
+    else if (m_size!=sizeof(TLBEventV1)) m_valid = false; // v1 has no trailer
+    m_verified = true;
+    return m_valid;
   }
 
   public:
@@ -123,6 +127,8 @@ struct TLBDataFragment {
     uint8_t m_version;
     bool m_debug;
     uint32_t m_crc_calculated;
+    mutable bool m_verified;
+    mutable bool m_valid;
 };
 }
 
