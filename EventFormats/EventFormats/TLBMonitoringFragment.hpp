@@ -11,16 +11,14 @@
 #include "Exceptions/Exceptions.hpp"
 #include "FletcherChecksum.hpp"
 
-#define MONITORING_HEADER_V1 0xFEAD0050
-#define MONITORING_HEADER_V2 0xFEAD0005
-#define MASK_DATA 0xFFFFFF
-#define MASK_FRAMEID_32b 0xF0000000
-#define MASK_FRAMEID_TRIGLINE 0xFF000000
-
-
 namespace TLBMonFormat {
 class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
+const uint32_t MONITORING_HEADER_V1 = 0xFEAD0050;
+const uint32_t MONITORING_HEADER_V2 = 0xFEAD0005;
+const uint32_t MASK_DATA = 0xFFFFFF;
+const uint32_t MASK_FRAMEID_32b = 0xF0000000;
+const uint32_t MASK_FRAMEID_TRIGLINE = 0xFF000000;
 const uint32_t FID_EVENT_ID = 0x10000000;
 const uint32_t FID_BC_ID = 0x30000000;
 const uint32_t FID_TBP = 0x40000000;

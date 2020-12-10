@@ -12,18 +12,17 @@
 #include "Exceptions/Exceptions.hpp"
 #include "FletcherChecksum.hpp"
 
-#define TRIGGER_HEADER_V1 0xFEAD000A
-#define TRIGGER_HEADER_V2 0xFEAD00A0
-#define MASK_DATA 0xFFFFFF
-#define MASK_TBP 0x3F
-#define MASK_TAP_V1 0x3F00
-#define MASK_TAP_V2 0xFC0
-#define MASK_FRAMEID_32b 0xF0000000
-#define MASK_FRAMEID_16b 0xF000
-
 namespace TLBDataFormat {
 class TLBDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
+const uint32_t TRIGGER_HEADER_V1 = 0xFEAD000A;
+const uint32_t TRIGGER_HEADER_V2 = 0xFEAD00A0;
+const uint32_t MASK_DATA = 0xFFFFFF;
+const uint32_t MASK_TBP = 0x3F;
+const uint32_t MASK_TAP_V1 = 0x3F00;
+const uint32_t MASK_TAP_V2 = 0xFC0;
+const uint32_t MASK_FRAMEID_32b = 0xF0000000;
+const uint16_t MASK_FRAMEID_16b = 0xF000;
 const uint32_t FID_EVENT_ID = 0x10000000;
 const uint32_t FID_BC_ID = 0x30000000;
 const uint16_t FID_TBPTAP = 0xC000;
