@@ -140,7 +140,7 @@ struct TLBMonitoringFragment {
     }
     uint32_t checksum() const { return event.m_checksum & MASK_DATA; }
     size_t size() const { return m_size; }
-    bool has_checksum_error() const { return (m_crc_calculated != checksum()); }
+    bool has_checksum_error() const { if (version()<0x2) return false; return (m_crc_calculated != checksum()); }
     bool has_frameid_error() const { return !frame_check();}
     uint8_t version() const { return m_version; }
     //setters
