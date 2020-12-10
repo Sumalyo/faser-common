@@ -18,9 +18,9 @@ class TLBDataException : public Exceptions::BaseException { using Exceptions::Ba
 const uint32_t TRIGGER_HEADER_V1 = 0xFEAD000A;
 const uint32_t TRIGGER_HEADER_V2 = 0xFEAD00A0;
 const uint32_t MASK_DATA = 0xFFFFFF;
-const uint32_t MASK_TBP = 0x3F;
-const uint32_t MASK_TAP_V1 = 0x3F00;
-const uint32_t MASK_TAP_V2 = 0xFC0;
+const uint8_t MASK_TBP = 0x3F;
+const uint16_t MASK_TAP_V1 = 0x3F00;
+const uint16_t MASK_TAP_V2 = 0xFC0;
 const uint32_t MASK_FRAMEID_32b = 0xF0000000;
 const uint16_t MASK_FRAMEID_16b = 0xF000;
 const uint32_t FID_EVENT_ID = 0x10000000;
