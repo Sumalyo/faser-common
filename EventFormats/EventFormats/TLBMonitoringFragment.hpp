@@ -175,7 +175,8 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
     out<<" deadtime veto count: "<< event.deadtime_veto_counter()
     <<", busy veto count: "<< event.busy_veto_counter()
     <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
-    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl;
+    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl
+    <<", digi busy veto count: "<< event.digitizer_busy_counter() << std::endl;
   } catch ( TLBMonFormat::TLBMonException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
