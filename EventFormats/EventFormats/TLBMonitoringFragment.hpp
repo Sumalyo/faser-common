@@ -140,7 +140,7 @@ struct TLBMonitoringFragment {
     }
     uint32_t checksum() const { return event.m_checksum & MASK_DATA; }
     size_t size() const { return m_size; }
-    bool has_checksum_error() const { return (m_crc_calculated != checksum()); }
+    bool has_checksum_error() const { if (version()<0x2) return false; return (m_crc_calculated != checksum()); }
     bool has_frameid_error() const { return !frame_check();}
     uint8_t version() const { return m_version; }
     //setters
@@ -175,7 +175,8 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
     out<<" deadtime veto count: "<< event.deadtime_veto_counter()
     <<", busy veto count: "<< event.busy_veto_counter()
     <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
-    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl;
+    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl
+    <<", digi busy veto count: "<< event.digitizer_busy_counter() << std::endl;
   } catch ( TLBMonFormat::TLBMonException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
