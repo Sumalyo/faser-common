@@ -15,6 +15,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
   event.m_event_id = 0xffffff;
   event.m_bc_id = 0xffff;
   uint32_t nextFrameCounter{0xf}; // invalid
+  event.m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
 
   for (size_t i = 0; i < size/4; i++)
   {
@@ -48,12 +49,12 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
       else if (((data[i] & MASK_TRBDATATYPE) == TRBDATATYPE_CRC) && event.m_crc_missing)
       {
         if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected");
+        event.m_crc = data[i] & MASK_CRC;
         event.m_crc_missing = false;
         if ( i < (size/4 - 1))
         {
           if (m_debug) WARNING("TrackerDataFragment::TrackerDataFragment :: Unexpected data following CRC word will be ignored.");
         }
-        // Check of CRC to be implemented
         break;   // for now, we are done
       }
       else
@@ -67,7 +68,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
 
     if ((data[i] & MASK_WORDTYPE) == WORDTYPE_TRBDATA)
     { 
-      switch(data[i] & MASK_TRBDATA_MODULEID)
+      switch(data[i] & MASK_TRBDATATYPE)
       {
         case TRBDATATYPE_BCID: 
           if (event.m_bc_id_missing)
@@ -124,6 +125,11 @@ inline bool TrackerDataFragment::valid() const
   if (event.m_crc_missing)
   {
     if (m_debug) WARNING("TrackerDataFragment::valid :: crc missing.");
+    return false;
+  }
+  if (event.m_crc != event.m_crc_calculated)
+  {
+    if (m_debug) WARNING("TrackerDataFragment::valid :: mismatching checksum.");
     return false;
   }
   if (event.m_has_trb_error)
