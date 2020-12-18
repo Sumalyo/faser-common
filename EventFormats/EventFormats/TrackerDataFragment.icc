@@ -15,6 +15,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
   event.m_event_id = 0xffffff;
   event.m_bc_id = 0xffff;
   uint32_t nextFrameCounter{0xf}; // invalid
+  event.m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
 
   for (size_t i = 0; i < size/4; i++)
   {
@@ -22,7 +23,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
     if ((i > 0) && (data[i] != TRB_END) && (frameCounter != nextFrameCounter))
     {
       event.m_frame_counter_invalid = true;
-      THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: Invalid frame counter (" + std::to_string(frameCounter) + ") detected; expected" + std::to_string(nextFrameCounter)); 
+      break;
     }
     if (m_debug) 
     { 
@@ -48,12 +49,12 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
       else if (((data[i] & MASK_TRBDATATYPE) == TRBDATATYPE_CRC) && event.m_crc_missing)
       {
         if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected");
+        event.m_crc = data[i] & MASK_CRC;
         event.m_crc_missing = false;
         if ( i < (size/4 - 1))
         {
           if (m_debug) WARNING("TrackerDataFragment::TrackerDataFragment :: Unexpected data following CRC word will be ignored.");
         }
-        // Check of CRC to be implemented
         break;   // for now, we are done
       }
       else
@@ -61,13 +62,13 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
         event.m_unrecognized_frames = true;
         std::stringstream s;
         s << std::hex << std::setw(8) << std::setfill('0') << data[i];
-        THROW(TrackerDataException,  "TrackerDataFragment::TrackerDataFragment :: Unrecognized TRB control frame: word " + std::to_string(i) + " value: " + s.str() );
+        break;
       }
     }
 
     if ((data[i] & MASK_WORDTYPE) == WORDTYPE_TRBDATA)
     { 
-      switch(data[i] & MASK_TRBDATA_MODULEID)
+      switch(data[i] & MASK_TRBDATATYPE)
       {
         case TRBDATATYPE_BCID: 
           if (event.m_bc_id_missing)
@@ -85,14 +86,14 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
         case TRBDATATYPE_TRBERROR:        
           event.m_trb_error_id = data[i] & MASK_ERROR;
           event.m_has_trb_error = true;  // Can this occur more than once?
-          THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: TRB ERROR: " + std::to_string(data[i] & MASK_ERROR) ); 
+          break;
         case TRBDATATYPE_MODULEERROR_LED:
         case TRBDATATYPE_MODULEERROR_LEDX:
           uint32_t module = (data[i] & MASK_TRBDATA_MODULEID) >> RSHIFT_TRBDATA_MODULEID;
           uint32_t channel = (data[i] & MASK_TRBDATA_ERRORCHANNEL) >> RSHIFT_TRBDATA_ERRORCHANNEL;
           uint32_t error = data[i] & MASK_ERROR;
           event.m_module_error_ids.push_back( (channel << LSHIFT_ERROR_CHANNEL) | (module << LSHIFT_ERROR_MODULE) | error );
-          THROW(TrackerDataException, "TrackerDataFragment::TrackerDataFragment :: LED(x) Module error: Channel " + std::to_string(channel) + " Module " + std::to_string(module) + " ErrID: " + std::to_string(error));
+          break;
       }
     }
     
@@ -124,6 +125,11 @@ inline bool TrackerDataFragment::valid() const
   if (event.m_crc_missing)
   {
     if (m_debug) WARNING("TrackerDataFragment::valid :: crc missing.");
+    return false;
+  }
+  if (event.m_crc != event.m_crc_calculated)
+  {
+    if (m_debug) WARNING("TrackerDataFragment::valid :: mismatching checksum.");
     return false;
   }
   if (event.m_has_trb_error)

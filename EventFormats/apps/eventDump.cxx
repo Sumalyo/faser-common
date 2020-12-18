@@ -125,9 +125,23 @@ int main(int argc, char **argv) {
             break;
           case TrackerSourceID: //FIXME put in specific 
             if(showData && showTRB){
+              try {
               TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+              if (!tracker_data_frag.valid()){
+                std::cout<<" WARNING corrupted tracker fragment!"<<std::dec<<std::endl;
+                if (tracker_data_frag.has_trb_error()) std::cout<<"TRB error found with id = "<<static_cast<int>(tracker_data_frag.trb_error_id())<<std::endl;
+                if (tracker_data_frag.has_module_error()) {
+                  for (auto module_error : tracker_data_frag.module_error_id()) std::cout<<"Module error found with id = "<<static_cast<int>(module_error)<<std::endl;
+                } // FIXME These print outs will never happen as TRB and module errors throw exception
+                if (tracker_data_frag.has_crc_error()) std::cout<<"CRC msimatch!"<<std::endl;
+              }
               std::cout<<"Tracker data fragment:"<<std::endl;
               std::cout<<tracker_data_frag<<std::endl;
+              }
+              catch (TrackerDataException &e ){
+                std::cout<<"WARNING Crashed TrackerDataFragment! Skipping... "<<std::endl; 
+                std::cout<<e.what()<<std::endl;
+              }
             }
             break;
           case PMTSourceID:

@@ -10,6 +10,7 @@
 #include <bitset>
 #include "Exceptions/Exceptions.hpp"
 #include "Logging.hpp"
+#include "EventFormats/FletcherChecksum.hpp"
 #include <iomanip>
 #include <map>
 #include <chrono>
@@ -183,6 +184,7 @@ struct TrackerDataFragment
 
     bool has_trb_error() const { return event.m_has_trb_error; }
     bool has_module_error() const { return event.m_module_error_ids.size() > 0; }
+    bool has_crc_error() const { return event.m_crc != event.m_crc_calculated; }
     bool missing_event_id() const { return event.m_event_id_missing; }
     bool missing_bcid() const { return event.m_bc_id_missing; }
     bool missing_crc() const { return event.m_crc_missing; }
@@ -217,6 +219,8 @@ struct TrackerDataFragment
         bool m_frame_counter_invalid {false};
         bool m_unrecognized_frames {false};
         uint8_t m_trb_error_id {0};
+        uint32_t m_crc;
+        uint32_t m_crc_calculated;
         std::vector< uint8_t > m_module_error_ids;
         std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
         std::vector < SCTEvent* > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
