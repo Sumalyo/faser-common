@@ -25,9 +25,10 @@
       static uint32_t ReturnFletcherChecksum(const uint32_t* data, size_t size){
         std::vector<uint32_t> words(data, data+size/sizeof(uint32_t));
         size_t wordsTotal = words.size();
+        if (wordsTotal <= 1) return 0;
         uint32_t checksumL(0);
         uint32_t checksumH(0);
-        for ( uint8_t i = 0; i<wordsTotal-1; i++) {
+        for (unsigned i = 0; i<wordsTotal-1; i++) {
           checksumL += words[i];
           checksumH += checksumL;
         }

@@ -51,8 +51,9 @@ struct TLBDataFragment {
     event.v1.m_input_bits_next_clk = 0;
     event.v1.m_tbptap = 0;
     memcpy(&event, data, std::min(size, sizeof(TLBEvent)));
-    m_version=0x2;
+    m_version=0xff;
     if (data[0] == TRIGGER_HEADER_V1) m_version=0x1; 
+    else if (data[0] == TRIGGER_HEADER_V2) m_version=0x2; 
     m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
     m_verified = false;
   }
@@ -69,6 +70,7 @@ struct TLBDataFragment {
   bool valid() const {
     if (m_verified) return m_valid;
     m_valid = true;
+    if ( version() == 0xff ) m_valid = false;
     if ( version() > 0x1 ){
       if (m_crc_calculated != checksum()) m_valid = false;
       if (!frame_check()) m_valid = false;
@@ -145,9 +147,13 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFormat::TLBDataF
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
-    out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
-    out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
+    if (event.version()>0x1){
+      out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
+      out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
+    }
   }
+  out<<"\ndata format version: 0x"<<std::hex<<(int)event.version()<<std::dec<<std::endl;
+  if (event.version() == 0xff ) out<<"WARNING This is an invalid format version number! Either this data is corrupted or this is not TLB physics data."<<std::endl;
 
  return out;
 }
