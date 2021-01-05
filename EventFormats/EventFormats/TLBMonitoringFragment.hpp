@@ -60,8 +60,9 @@ struct TLBMonitoringFragment {
     event.v1.m_bcr_veto_counter = 0xffffff;
     event.m_digitizer_busy_counter = 0xffffff;
     memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
-    m_version=0x2;
+    m_version = 0xff;
     if (data[0] == MONITORING_HEADER_V1) m_version=0x1; 
+    else if (data[0] == MONITORING_HEADER_V2) m_version=0x2;
     m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
     m_verified = false;
   }
@@ -84,6 +85,7 @@ struct TLBMonitoringFragment {
   bool valid() const {
     if (m_verified) return m_valid;
     m_valid = true;
+    if ( version() == 0xff ) m_valid = false;
     if ( version() > 0x1 ){
       if (m_crc_calculated != checksum()) m_valid = false;
       if (!frame_check()) m_valid = false;
@@ -175,15 +177,20 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
     out<<" deadtime veto count: "<< event.deadtime_veto_counter()
     <<", busy veto count: "<< event.busy_veto_counter()
     <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
-    <<", bcr veto count: "<< event.bcr_veto_counter() << std::endl
-    <<", digi busy veto count: "<< event.digitizer_busy_counter() << std::endl;
+    <<", bcr veto count: "<< event.bcr_veto_counter();
+    if (event.version()>0x1) out<<", digi busy veto count: "<< event.digitizer_busy_counter();
+    out<<std::endl;
   } catch ( TLBMonFormat::TLBMonException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
-    out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
-    out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
+    if (event.version()>0x1){
+      out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
+      out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
+    }
   }
+  out<<"\ndata format version: 0x"<<std::hex<<(int)event.version()<<std::dec<<std::endl;
+  if (event.version() == 0xff ) out<<"WARNING This is an invalid format version number! Either this data is corrupted or this is not TLB monitoring data."<<std::endl;
 
  return out;
 }
