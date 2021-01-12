@@ -55,9 +55,12 @@ test_decoder_tlb:
     - pwd
     - source setup.sh 
     - cd build
-    - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_April16/TLBDigitizer_lockdownsetup_200Hz_signal_coincidencePrescale1_input1Prescale2_20Hz_random_1Hz_monitoring/Faser-Physics-000000-00000.raw Faser-Physics-000000-00000.raw 
-    - ./EventFormats/eventDump -f -d TLB -n 1 Faser-Physics-000000-00000.raw > output
-    - diff output ../EventFormats/apps/ReferenceOutput/ref_tlb
+    - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_Dec/Faser-Physics-000603-00003.raw Faser-Physics-000603-00003.raw
+    - ./EventFormats/eventDump -f -d TLB -n 5 Faser-Physics-000603-00003.raw > output
+    - diff output ../EventFormats/apps/ReferenceOutput/ref_tlbdata
+    - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_Dec/Faser-TLBMonitoring-000603-00000.raw Faser-TLBMonitoring-000603-00000.raw
+    - ./EventFormats/eventDump -f -d TLB -n 5 Faser-TLBMonitoring-000603-00000.raw > output
+    - diff output ../EventFormats/apps/ReferenceOutput/ref_tlbmonitoring
   artifacts:
     paths:
     - build/output
