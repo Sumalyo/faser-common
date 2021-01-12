@@ -34,7 +34,7 @@ build_faser_common:
     - source setup.sh
     - mkdir -p build 
     - cd build
-    - cmake3 ../
+    - cmake3 -DBE_PEDANTIC=ON ../
     - make -j8
   artifacts:
     paths:
