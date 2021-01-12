@@ -189,7 +189,7 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
       out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
     }
   }
-  out<<"\ndata format version: 0x"<<std::hex<<(int)event.version()<<std::dec<<std::endl;
+  out<<"\ndata format version: 0x"<<std::hex<<static_cast<int>(event.version())<<std::dec<<std::endl;
   if (event.version() == 0xff ) out<<"WARNING This is an invalid format version number! Either this data is corrupted or this is not TLB monitoring data."<<std::endl;
 
  return out;
