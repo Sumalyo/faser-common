@@ -159,10 +159,11 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
 {
   for (uint8_t module = 0; module < MODULES_PER_FRAGMENT; module++)
   {
+    SCTEvent* sctEvent {nullptr};
     for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
     {
       if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Decoding data for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ")." );
-      SCTEvent* sctEvent {nullptr};
+      
 
       bool praeambleFound = false;
       std::pair<uint8_t, uint8_t> ModuleSide { module, LED };
@@ -205,7 +206,10 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           }
           else
           {
-            sctEvent = event.GetModule(module);
+            if (sctEvent != nullptr) sctEvent = event.GetModule(module);
+            else {
+              sctEvent = new SCTEvent(module, l1id, bcid);
+              event.SetModule(module, sctEvent);}
             if (m_debug && (sctEvent != nullptr)) TRACE("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           
