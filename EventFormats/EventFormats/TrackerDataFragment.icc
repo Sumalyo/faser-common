@@ -235,7 +235,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             s << std::hex << err;
             ERROR("TrackerDataFragment::DecodeModuleData :: Module Data: ERROR code 0x" + s.str() + " for chip " + std::to_string(chip));
           }
-          sctEvent->AddError(chip, err);
+          if (sctEvent->ChipIsValid(chip)) sctEvent->AddError(chip, err);
           bitstream.RemoveBits(11);
           continue;
         }
@@ -261,7 +261,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
               continue;
             }
             unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
-            sctEvent->AddHit(chip, channel++, hit);
+            if (sctEvent->ChipIsValid(chip)) sctEvent->AddHit(chip, channel++, hit);
             if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Hit pattern = " + std::to_string(hit) );
             bitstream.RemoveBits(4);
           }
