@@ -429,7 +429,7 @@ inline void SCTEvent::AddHeader(unsigned int l1id, unsigned int bcid)
  */
 inline void SCTEvent::AddError (unsigned int chip, unsigned int err)
 {
-  chip |= 20; // Add const 2MSB of chip address
+  chip |= 0x20; // Add const 2MSB of chip address
   m_hasError = true;
   auto it = m_chipIDMap.find(chip);
   if (it == m_chipIDMap.end()) {
