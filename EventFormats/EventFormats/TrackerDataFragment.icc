@@ -206,10 +206,11 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           }
           else
           {
-            if (sctEvent != nullptr) sctEvent = event.GetModule(module);
-            else {
+            sctEvent = event.GetModule(module);
+            if (sctEvent == nullptr) {
               sctEvent = new SCTEvent(module, l1id, bcid);
               event.SetModule(module, sctEvent);}
+
             if (m_debug && (sctEvent != nullptr)) TRACE("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           
