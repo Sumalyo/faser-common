@@ -302,27 +302,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
 	    }
 	    word32|=0x80000000; //set the missing bit - can't do anything about module hit
 	  }
-#if 0
-	  if ( ((bitstream.GetWord32() & 0x80000000) != 0x80000000) ) {
-	    std::stringstream s;
-	    s << " " << std::dec << std::bitset<32>(bitstream.GetWord32());
-	    WARNING("Did not find hit header bit for hit in chip "+std::to_string(chip)+", channel "<<std::to_string(channel)+" in bits:" + s.str()+" - stripping 0s");
-	    while ( ((bitstream.GetWord32() & 0xF0000000) != 0x50000000) ) {//Hack based on layer 1, module 0 data
-	      if (bitstream.GetWord32()==0) break;
-	      bitstream.RemoveBits(1);
-	    }
-	    if (chip!=5) //yet another hack based on module 1 observations
-	      bitstream.RemoveBits(2);
-	    //look for next hit-like header up to the end
-	    /*	    while ((bitstream.GetWord32() & (MASK_MODULE_DATA|0x40000)) != (TAG_MODULE_DATA|0x40000) ) {
-	      if (bitstream.GetWord32()==0) break;
-	      bitstream.RemoveBits(1);
-	    }
-	    */
-	    //FIXME: should check that chip number is rising and valid and if not keep going as we probably are not at the spot
-	    continue;
-	  }
-#endif
+
 	  int cntHits=0;
           while ( ((word32 & 0x80000000) == 0x80000000) )
           {
@@ -331,9 +311,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER)
             {
               if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Module trailer found");
-              bitstream.RemoveBits(16);
-              praeambleFound = false;      
-              continue;
+              break;
             }
 	    cntHits+=1;
             unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
@@ -352,6 +330,13 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           bitstream.RemoveBits(3);
           continue;
         }
+	if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER)
+          {			  
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Module trailer found");
+	    
+            break; //ignore anything coming after trailer... should maybe check that it is really empty
+          }
+	
         // data is only valid after a praeamble (aka header) was found. Otherwise praeamble might be mistaken as an error code
         //praeambleFound = false;
 	std::stringstream s;
