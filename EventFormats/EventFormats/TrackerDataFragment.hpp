@@ -60,7 +60,8 @@ public:
             m_complete = false;
             m_missingData = true;
             m_chipIsValid=false;
-            if (m_debug) {WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());}
+            WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
+            //if (m_debug) {WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());}
           }
           return m_chipIsValid;}
     
