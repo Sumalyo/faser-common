@@ -50,6 +50,7 @@ public:
     void SetMissingData() {m_missingData = true;}
     bool BCIDMismatch() const {return m_bcidMismatch;}
     void SetBCIDMismatch() {m_bcidMismatch = true;}
+    void SetChipIsValid() {m_chipIsValid=true;}
     bool ChipIsValid(unsigned int chip) {
           chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
           auto it = m_chipIDMap.find(chip);
@@ -62,8 +63,7 @@ public:
             WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
           }
           return m_chipIsValid;}
-        void SetChipIsValid() {m_chipIsValid=true;}
-
+    
     unsigned short GetL1ID() const {return m_l1id;}
     unsigned short GetBCID() const {return m_bcid;}
     
