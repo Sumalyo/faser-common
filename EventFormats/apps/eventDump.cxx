@@ -1,5 +1,4 @@
 #include "EventFormats/DAQFormats.hpp"
-//#include <unistd.h>
 #include <getopt.h>
 #include "EventFormats/TLBDataFragment.hpp"
 #include "EventFormats/TLBMonitoringFragment.hpp"
@@ -37,7 +36,6 @@ int main(int argc, char **argv) {
     {nullptr, no_argument, nullptr, 0}
   };
 
-  //while ( (opt = getopt(argc, argv, "fpd:n:")) != -1 ) {  
   while (true) {
     opt = getopt_long(argc, argv, "fd:n:", long_options, nullptr);
     if (opt == -1) break;
@@ -139,7 +137,7 @@ int main(int argc, char **argv) {
               }
             }
             break;
-          case TrackerSourceID: //FIXME put in specific 
+          case TrackerSourceID:
             if(showData && showTRB){
               try {
                 TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
@@ -151,7 +149,7 @@ int main(int argc, char **argv) {
                   if (tracker_data_frag.has_trb_error()) std::cout<<"TRB error found with id = "<<static_cast<int>(tracker_data_frag.trb_error_id())<<std::endl;
                   if (tracker_data_frag.has_module_error()) {
                     for (auto module_error : tracker_data_frag.module_error_id()) std::cout<<"Module error found with id = "<<static_cast<int>(module_error)<<std::endl;
-                  } // FIXME These print outs will never happen as TRB and module errors throw exception
+                  }
                   if (tracker_data_frag.has_crc_error()) std::cout<<"CRC msimatch!"<<std::endl;
                 }
               }
