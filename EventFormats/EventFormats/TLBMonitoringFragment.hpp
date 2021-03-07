@@ -12,6 +12,7 @@
 #include "FletcherChecksum.hpp"
 
 namespace TLBMonFormat {
+
 class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 const uint32_t MONITORING_HEADER_V1 = 0xFEAD0050;
@@ -24,9 +25,12 @@ const uint32_t FID_BC_ID = 0x30000000;
 const uint32_t FID_TBP = 0x40000000;
 const uint32_t FID_TAP = 0x50000000;
 const uint32_t FID_TAV = 0x60000000;
+const uint32_t FID_TAPORed = 0xF0000000;
+const uint32_t FID_TAVORed = 0xF0000000;
 const uint32_t FID_CRC = 0xD0000000;
 
 const uint8_t MAX_TRIG_LINE = 6;
+const uint8_t MONDATA_V2_OLD_SIZE = 112;
 
 struct TLBMonEventV1 {
   uint32_t m_header;
@@ -59,7 +63,10 @@ struct TLBMonitoringFragment {
     event.v1.m_rate_limiter_veto_counter = 0xffffff;
     event.v1.m_bcr_veto_counter = 0xffffff;
     event.m_digitizer_busy_counter = 0xffffff;
-    memcpy(&event, data, std::min(size, sizeof(TLBMonEvent)));
+    event.m_tap_ORed = 0xf0ffffff;
+    event.m_tav_ORed = 0xf0ffffff;
+    memcpy(&event, data, std::min(size, sizeof(TLBMonEvent))-sizeof(uint32_t)); // don't fill CRC yet
+    event.m_checksum = data[size/sizeof(data[0])-1];
     m_version = 0xff;
     if (data[0] == MONITORING_HEADER_V1) m_version=0x1; 
     else if (data[0] == MONITORING_HEADER_V2) m_version=0x2;
@@ -78,6 +85,8 @@ struct TLBMonitoringFragment {
       if ( (*(event.v1.m_tav+i)&(MASK_FRAMEID_TRIGLINE)) != (FID_TAV|(FID_CNT<<24))) return false;
       FID_CNT+=1;
     }
+    if (((event.m_tap_ORed&MASK_FRAMEID_32b)) != FID_TAPORed) return false;
+    if (((event.m_tav_ORed&MASK_FRAMEID_32b)) != FID_TAVORed) return false;
     if (((event.m_checksum&MASK_FRAMEID_32b)) != FID_CRC) return false;
     return true;
   }
@@ -89,7 +98,7 @@ struct TLBMonitoringFragment {
     if ( version() > 0x1 ){
       if (m_crc_calculated != checksum()) m_valid = false;
       if (!frame_check()) m_valid = false;
-      if (m_size!=sizeof(TLBMonEvent)) m_valid = false;
+      if (m_size!=sizeof(TLBMonEvent) && m_size!= sizeof(TLBMonEvent)-2*sizeof(uint32_t)) m_valid = false; // extra size check for old v2 mon data that included 2 less counters
     }
     else if (m_size!=sizeof(TLBMonEventV1)) m_valid = false; // v1 has no trailer
     m_verified = true;
@@ -140,6 +149,14 @@ struct TLBMonitoringFragment {
       if ( valid() || m_debug )  return event.m_digitizer_busy_counter&MASK_DATA;
       THROW(TLBMonException, "Data not valid");
     }
+    uint32_t tap_ORed() const {
+      if ( valid() || m_debug )  return event.m_tap_ORed&MASK_DATA;
+      THROW(TLBMonException, "Data not valid");
+    }
+    uint32_t tav_ORed() const {
+      if ( valid() || m_debug )  return event.m_tav_ORed&MASK_DATA;
+      THROW(TLBMonException, "Data not valid");
+    }
     uint32_t checksum() const { return event.m_checksum & MASK_DATA; }
     size_t size() const { return m_size; }
     bool has_checksum_error() const { if (version()<0x2) return false; return (m_crc_calculated != checksum()); }
@@ -152,6 +169,8 @@ struct TLBMonitoringFragment {
     struct TLBMonEvent {
       TLBMonEventV1 v1;
       uint32_t m_digitizer_busy_counter;
+      uint32_t m_tap_ORed;
+      uint32_t m_tav_ORed;
       uint32_t m_checksum;
     }  __attribute__((__packed__)) event;
     size_t m_size;
@@ -178,15 +197,19 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
     <<", busy veto count: "<< event.busy_veto_counter()
     <<", rate_limiter veto count: "<< event.rate_limiter_veto_counter()
     <<", bcr veto count: "<< event.bcr_veto_counter();
-    if (event.version()>0x1) out<<", digi busy veto count: "<< event.digitizer_busy_counter();
+    if (event.version()>0x1) {
+      out<<", digi busy veto count: "<< event.digitizer_busy_counter()<<std::endl;
+      if (event.size()!=TLBMonFormat::MONDATA_V2_OLD_SIZE)
+         out<<" TAP ORed: "<< event.tap_ORed()<<", TAV ORed: "<<event.tav_ORed();
+    }
     out<<std::endl;
   } catch ( TLBMonFormat::TLBMonException& e ) {
     out<<e.what()<<std::endl;
-    out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
-    out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;
+    out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()
+       <<". Fragment size is "<<event.size()<<" bytes total"<<std::endl;
     if (event.version()>0x1){
-      out<<"checksum errors present "<<event.has_checksum_error()<<std::endl;
-      out<<"frameid errors present "<<event.has_frameid_error()<<std::endl;
+      out<<"checksum errors present "<<event.has_checksum_error()
+         <<", frameid errors present "<<event.has_frameid_error()<<std::endl;
     }
   }
   out<<"\ndata format version: 0x"<<std::hex<<static_cast<int>(event.version())<<std::dec<<std::endl;
