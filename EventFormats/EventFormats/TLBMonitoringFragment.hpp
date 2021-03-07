@@ -65,11 +65,16 @@ struct TLBMonitoringFragment {
     event.m_digitizer_busy_counter = 0xffffff;
     event.m_tap_ORed = 0xf0ffffff;
     event.m_tav_ORed = 0xf0ffffff;
-    memcpy(&event, data, std::min(size, sizeof(TLBMonEvent))-sizeof(uint32_t)); // don't fill CRC yet
-    event.m_checksum = data[size/sizeof(data[0])-1];
     m_version = 0xff;
-    if (data[0] == MONITORING_HEADER_V1) m_version=0x1; 
-    else if (data[0] == MONITORING_HEADER_V2) m_version=0x2;
+    if (data[0] == MONITORING_HEADER_V1) {
+      m_version=0x1; 
+      memcpy(&event, data, std::min(size, sizeof(TLBMonEventV1)));
+    }
+    else if (data[0] == MONITORING_HEADER_V2) {
+      m_version=0x2;
+      memcpy(&event, data, std::min(size, sizeof(TLBMonEvent))-sizeof(uint32_t)); // don't fill CRC yet
+    }
+    event.m_checksum = data[size/sizeof(data[0])-1];
     m_crc_calculated = FletcherChecksum::ReturnFletcherChecksum(data, size);
     m_verified = false;
   }
@@ -98,7 +103,7 @@ struct TLBMonitoringFragment {
     if ( version() > 0x1 ){
       if (m_crc_calculated != checksum()) m_valid = false;
       if (!frame_check()) m_valid = false;
-      if (m_size!=sizeof(TLBMonEvent) && m_size!= sizeof(TLBMonEvent)-2*sizeof(uint32_t)) m_valid = false; // extra size check for old v2 mon data that included 2 less counters
+      if (m_size!=sizeof(TLBMonEvent) && m_size!=MONDATA_V2_OLD_SIZE) m_valid = false; // extra size check for old v2 mon data that included 2 less counters
     }
     else if (m_size!=sizeof(TLBMonEventV1)) m_valid = false; // v1 has no trailer
     m_verified = true;
