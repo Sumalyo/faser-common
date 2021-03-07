@@ -11,7 +11,11 @@ using namespace TLBDataFormat;
 using namespace TLBMonFormat;
 
 static void usage() {
-   std::cout<<"Usage: eventDump [-f] [--debug] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] <filename>"<<std::endl;
+   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] --debug <filename>\n"
+              "   -f:                 print fragment header information\n"
+              "   -d <subdetector>:   print full event information for subdetector\n"
+              "   -n <no. events>:    print only first n events\n"
+              "   --debug:            set TLB and tracker decoders to debug mode\n"; 
    exit(1);
 }
 
