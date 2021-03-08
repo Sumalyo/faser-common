@@ -1,5 +1,5 @@
 #include "EventFormats/DAQFormats.hpp"
-#include <unistd.h>
+#include <getopt.h>
 #include "EventFormats/TLBDataFragment.hpp"
 #include "EventFormats/TLBMonitoringFragment.hpp"
 #include "EventFormats/DigitizerDataFragment.hpp"
@@ -10,7 +10,11 @@ using namespace TLBDataFormat;
 using namespace TLBMonFormat;
 
 static void usage() {
-   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] <filename>"<<std::endl;
+   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] --debug <filename>\n"
+              "   -f:                 print fragment header information\n"
+              "   -d <subdetector>:   print full event information for subdetector\n"
+              "   -n <no. events>:    print only first n events\n"
+              "   --debug:            set TLB and tracker decoders to debug mode\n"; 
    exit(1);
 }
 
@@ -25,8 +29,16 @@ int main(int argc, char **argv) {
   bool showTRB=false;
   bool showDigitizer=false;
   int nEventsMax = -1;
+  static int debug_mode;
   int opt;
-  while ( (opt = getopt(argc, argv, "fd:n:")) != -1 ) {  
+  static struct option long_options[] = {
+    {"debug", no_argument, &debug_mode, 1},
+    {nullptr, no_argument, nullptr, 0}
+  };
+
+  while (true) {
+    opt = getopt_long(argc, argv, "fd:n:", long_options, nullptr);
+    if (opt == -1) break;
     switch ( opt ) {
     case 'f':
       std::cout<<"DumpingFragments ... "<<std::endl;
@@ -113,30 +125,33 @@ int main(int argc, char **argv) {
             if(showData && showTLB){
               if (event.event_tag() == PhysicsTag ) {
                 TLBDataFragment tlb_data_frag = TLBDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                if (debug_mode) tlb_data_frag.set_debug_on();
                 std::cout<<"TLB data fragment:"<<std::endl;
                 std::cout<<tlb_data_frag<<std::endl;
               }
               else if (event.event_tag() == TLBMonitoringTag ) {
                 TLBMonitoringFragment tlb_mon_frag = TLBMonitoringFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                if (debug_mode) tlb_mon_frag.set_debug_on();
                 std::cout<<"TLB monitoring fragment:"<<std::endl;
                 std::cout<<tlb_mon_frag<<std::endl;
               }
             }
             break;
-          case TrackerSourceID: //FIXME put in specific 
+          case TrackerSourceID:
             if(showData && showTRB){
               try {
-              TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-              if (!tracker_data_frag.valid()){
-                std::cout<<" WARNING corrupted tracker fragment!"<<std::dec<<std::endl;
-                if (tracker_data_frag.has_trb_error()) std::cout<<"TRB error found with id = "<<static_cast<int>(tracker_data_frag.trb_error_id())<<std::endl;
-                if (tracker_data_frag.has_module_error()) {
-                  for (auto module_error : tracker_data_frag.module_error_id()) std::cout<<"Module error found with id = "<<static_cast<int>(module_error)<<std::endl;
-                } // FIXME These print outs will never happen as TRB and module errors throw exception
-                if (tracker_data_frag.has_crc_error()) std::cout<<"CRC msimatch!"<<std::endl;
-              }
-              std::cout<<"Tracker data fragment:"<<std::endl;
-              std::cout<<tracker_data_frag<<std::endl;
+                TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                if (debug_mode) tracker_data_frag.set_debug_on();
+                std::cout<<"Tracker data fragment:"<<std::endl;
+                std::cout<<tracker_data_frag<<std::endl;
+                if (!tracker_data_frag.valid()){
+                  std::cout<<" WARNING corrupted tracker fragment!"<<std::dec<<std::endl;
+                  if (tracker_data_frag.has_trb_error()) std::cout<<"TRB error found with id = "<<static_cast<int>(tracker_data_frag.trb_error_id())<<std::endl;
+                  if (tracker_data_frag.has_module_error()) {
+                    for (auto module_error : tracker_data_frag.module_error_id()) std::cout<<"Module error found with id = "<<static_cast<int>(module_error)<<std::endl;
+                  }
+                  if (tracker_data_frag.has_crc_error()) std::cout<<"CRC msimatch!"<<std::endl;
+                }
               }
               catch (TrackerDataException &e ){
                 std::cout<<"WARNING Crashed TrackerDataFragment! Skipping... "<<std::endl; 
