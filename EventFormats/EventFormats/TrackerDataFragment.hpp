@@ -50,7 +50,7 @@ public:
     void SetMissingData() {m_missingData = true;}
     bool BCIDMismatch() const {return m_bcidMismatch;}
     void SetBCIDMismatch() {m_bcidMismatch = true;}
-    //void SetChipIsValid() {m_chipIsValid=true;}
+    void SetChipIsValid() {m_chipIsValid=true;}
     bool ChipIsValid(unsigned int chip) {
           chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
           auto it = m_chipIDMap.find(chip);
