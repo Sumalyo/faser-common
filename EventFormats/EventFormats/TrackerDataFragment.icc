@@ -224,7 +224,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             TRACE("TrackerDataFragment::DecodeModuleData ::      removed bits bfore finding Module Header = " + std::to_string(removedBits) );
           }
 	  if (removedBits!=0) {
-	    WARNING("Had to remove " + std::to_string(removedBits) + " bits to find module header")
+	    WARNING("Had to remove " + std::to_string(removedBits) + " bits to find module header");
 	  }
           if (LED==0)
           {
