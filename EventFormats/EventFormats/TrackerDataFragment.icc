@@ -179,10 +179,8 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         if (m_debug)
         {
           std::stringstream s;
-          s << std::hex << bitstream.GetWord32();
 	  s << " " << std::dec << std::bitset<32>(bitstream.GetWord32());
           TRACE("TrackerDataFragment::DecodeModuleData :: Data word = " + s.str());
-          TRACE("TrackerDataFragment::DecodeModuleData :: Data word = xxxxxxxx 01aaaaccccccc1ddd1ddd1ddd");
         }
 	uint32_t word32 = bitstream.GetWord32();
         if (first && ((word32 & MASK_MODULE_HEADER) != TAG_MODULE_HEADER)) {
@@ -206,7 +204,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
 	      o << " " << std::dec << std::bitset<32>(bitstreamOther.GetWord32());
 	      WARNING("Different headers LED 0/1: "<<s.str()<<o.str());
 	    }
-	    word32=bitstream.GetWord32(); //FIXME: this is not generic, but targeted to layer 1, module 0 problem
+	    word32=bitstreamOther.GetWord32(); //This is targeted to layer 1, module 0 problem
 	  }
 	}
 	first=false;
@@ -265,7 +263,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         {
           unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_ERR)&MASK_CHIPADD_ERR);
           unsigned int err = ((bitstream.GetWord32() >> RSHIFT_ERR)&MASK_ERR);
-          if (m_debug||true) 
+          if (m_debug) 
           {
             std::stringstream s;
             s << std::hex << err;
@@ -286,11 +284,6 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_DATA)&MASK_CHIPADD_DATA);
           unsigned int channel = ((bitstream.GetWord32() >> RSHIFT_CHANNEL_DATA)&MASK_CHANNEL_DATA);
 	  if (m_debug) TRACE("Found chip "+std::to_string(chip)+ " channel "+std::to_string(channel));
-	  if (m_debug && (module==0)) {
-	    std::stringstream s;
-	    s << " " << std::dec << std::bitset<32>(bitstream.GetWord32());
-	    TRACE("Found chip "+std::to_string(chip)+ " channel "+std::to_string(channel)+" in:"+s.str());
-	  }
           bitstream.RemoveBits(13); // after that we expect n-times <1><xxx> => check MSB to be 1
 	  uint32_t word32 = bitstream.GetWord32();
 	  if ( (word32 & 0x80000000) != 0x80000000) {
@@ -325,8 +318,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         }
         if ((bitstream.GetWord32() & MASK_MODULE_NODATA) == TAG_MODULE_NODATA && praeambleFound) 
         {
-	  //if (module==0) INFO("Found no hit data");
-          if (m_debug) WARNING("TrackerDataFragment::DecodeModuleData :: No Hit packet");
+          if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: No Hit packet");
           bitstream.RemoveBits(3);
           continue;
         }
@@ -337,8 +329,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             break; //ignore anything coming after trailer... should maybe check that it is really empty
           }
 	
-        // data is only valid after a praeamble (aka header) was found. Otherwise praeamble might be mistaken as an error code
-        //praeambleFound = false;
+        // data is only valid after a preamble (aka header) was found. Otherwise preamble might be mistaken as an error code
 	std::stringstream s;
 	s << " " << std::dec << std::bitset<32>(bitstream.GetWord32());
 	if (bitstream.GetWord32()!=0&&bitstream.GetWord32()!=0x80000000) {
