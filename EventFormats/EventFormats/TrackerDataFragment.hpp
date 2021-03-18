@@ -50,6 +50,22 @@ public:
     void SetMissingData() {m_missingData = true;}
     bool BCIDMismatch() const {return m_bcidMismatch;}
     void SetBCIDMismatch() {m_bcidMismatch = true;}
+    //void SetChipIsValid() {m_chipIsValid=true;}
+    bool ChipIsValid(unsigned int chip) {
+          m_chipIsValid=true;
+          chip |= 0x20; // adding 2 MSB for chip address. All chips are served by "primary fiber".
+          auto it = m_chipIDMap.find(chip);
+          if (it == m_chipIDMap.end()) {
+            std::stringstream s;
+            s << std::hex << chip;
+            m_complete = false;
+            m_missingData = true;
+            m_chipIsValid=false;
+            WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
+            //if (m_debug) {WARNING("SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());}
+          }
+          return m_chipIsValid;}
+    
     unsigned short GetL1ID() const {return m_l1id;}
     unsigned short GetBCID() const {return m_bcid;}
     
@@ -65,6 +81,7 @@ private:
     bool m_missingData; // sepcifies if data from all chips (i.e. LED and LEDX lines is inserted
     bool m_bcidMismatch; // bcid mismatch between led and ledX data streams
     bool m_hasError; // bcid mismatch between led and ledX data streams
+    bool m_chipIsValid=true; //check if chip exists in map
     std::map<unsigned int, unsigned int> m_chipIDMap; // maps chipID to vector index
 };
 
