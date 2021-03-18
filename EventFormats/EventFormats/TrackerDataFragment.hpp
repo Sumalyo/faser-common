@@ -140,8 +140,10 @@ struct TrackerDataFragment
     const uint32_t TAG_MODULE_ERROR   = 0x00200000;
     const uint32_t MASK_MODULE_CONFIG = 0xE1C02010;
     const uint32_t TAG_MODULE_CONFIG  = 0x1C02010;
-    const uint32_t MASK_MODULE_DATA   = 0xC0040000;
-    const uint32_t TAG_MODULE_DATA    = 0x40040000;
+  //    const uint32_t MASK_MODULE_DATA   = 0xC0040000;
+  //    const uint32_t TAG_MODULE_DATA    = 0x40040000;
+    const uint32_t MASK_MODULE_DATA   = 0xC0000000; //don't look for first hit bit here as might be missing in buggy module 0
+    const uint32_t TAG_MODULE_DATA    = 0x40000000;
     const uint32_t MASK_MODULE_NODATA = 0xE0000000;
     const uint32_t TAG_MODULE_NODATA  = 0x20000000;
     
