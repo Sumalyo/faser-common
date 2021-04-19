@@ -29,7 +29,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
     { 
       std::stringstream s;
       s << std::hex << std::setw(8) << std::setfill('0') << data[i];
-      DEBUG("TrackerDataFragment::TrackerDataFragment :: Tracker Word " + std::to_string(i) + " (" + std::to_string(frameCounter) + ") : " +  s.str());
+      TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker Word " + std::to_string(i) + " (" + std::to_string(frameCounter) + ") : " +  s.str());
     }
     nextFrameCounter = ++frameCounter % FRAME_COUNTER_CYCLE;
     if ((data[i] & MASK_WORDTYPE) == TRB_HEADER) 
@@ -38,17 +38,17 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
       {
         event.m_event_id = data[i] & MASK_EVNTCNT;
         event.m_event_id_missing = false;
-        if (m_debug) DEBUG("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets event_id to " + std::to_string(event.m_event_id));
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets event_id to " + std::to_string(event.m_event_id));
         continue;
       }
       else if (data[i] == TRB_END)
       {
-        if (m_debug) DEBUG("TrackerDataFragment::TrackerDataFragment :: End of tracker event detected");  // not actually present in raw data
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: End of tracker event detected");  // not actually present in raw data
         break;
       }
       else if (((data[i] & MASK_TRBDATATYPE) == TRBDATATYPE_CRC) && event.m_crc_missing)
       {
-        if (m_debug) DEBUG("TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected");
+        if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Tracker CRC word detected");
         event.m_crc = data[i] & MASK_CRC;
         event.m_crc_missing = false;
         if ( i < (size/4 - 1))
@@ -75,7 +75,7 @@ inline TrackerDataFragment::TrackerDataFragment(const uint32_t *data, size_t siz
           {
             event.m_bc_id = data[i] & MASK_BCID;
             event.m_bc_id_missing = false;
-            if (m_debug) DEBUG("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets bc_id to " + std::to_string(event.m_bc_id) );
+            if (m_debug) TRACE("TrackerDataFragment::TrackerDataFragment :: Word " + std::to_string(i) + " sets bc_id to " + std::to_string(event.m_bc_id) );
           }
           else
           {
@@ -162,7 +162,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
     SCTEvent* sctEvent {nullptr};
     for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
     {
-      if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: Decoding data for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ")." );
+      if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Decoding data for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ")." );
       
 
       bool praeambleFound = false;
@@ -180,7 +180,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         {
           std::stringstream s;
 	  s << " " << std::dec << std::bitset<32>(bitstream.GetWord32());
-          DEBUG("TrackerDataFragment::DecodeModuleData :: Data word = " + s.str());
+          TRACE("TrackerDataFragment::DecodeModuleData :: Data word = " + s.str());
         }
 	uint32_t word32 = bitstream.GetWord32();
         if (first && ((word32 & MASK_MODULE_HEADER) != TAG_MODULE_HEADER)) {
@@ -220,8 +220,8 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           unsigned int bcid = ((word32 >> RSHIFT_MODULE_BCID)&MASK_MODULE_BCID);
           if (m_debug) 
           {
-            DEBUG("TrackerDataFragment::DecodeModuleData :: Module Header: L1D = " + std::to_string(l1id)  + " BCID = " + std::to_string(bcid));
-            DEBUG("TrackerDataFragment::DecodeModuleData ::      removed bits bfore finding Module Header = " + std::to_string(removedBits) );
+            TRACE("TrackerDataFragment::DecodeModuleData :: Module Header: L1D = " + std::to_string(l1id)  + " BCID = " + std::to_string(bcid));
+            TRACE("TrackerDataFragment::DecodeModuleData ::      removed bits bfore finding Module Header = " + std::to_string(removedBits) );
           }
 	  if (removedBits!=0) {
 	    WARNING("Had to remove " + std::to_string(removedBits) + " bits to find module header");
@@ -231,7 +231,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             // process first half of module data (led / ledx line)
             sctEvent = new SCTEvent(module, l1id, bcid);
             event.SetModule(module, sctEvent);
-            if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           else
           {
@@ -240,7 +240,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
               sctEvent = new SCTEvent(module, l1id, bcid);
               event.SetModule(module, sctEvent);}
 
-            if (m_debug && (sctEvent != nullptr)) DEBUG("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
+            if (m_debug && (sctEvent != nullptr)) TRACE("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
           
           removedBits = 0;
@@ -275,7 +275,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         }
         if ((bitstream.GetWord32() & MASK_MODULE_CONFIG) == TAG_MODULE_CONFIG && praeambleFound)
         {
-	  if (m_debug) DEBUG("remove 28 bits for module config");
+	  if (m_debug) TRACE("remove 28 bits for module config");
           bitstream.RemoveBits(28);
           continue;
         }
@@ -283,7 +283,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         {
           unsigned int chip = ((bitstream.GetWord32() >> RSHIFT_CHIPADD_DATA)&MASK_CHIPADD_DATA);
           unsigned int channel = ((bitstream.GetWord32() >> RSHIFT_CHANNEL_DATA)&MASK_CHANNEL_DATA);
-	  if (m_debug) DEBUG("Found chip "+std::to_string(chip)+ " channel "+std::to_string(channel));
+	  if (m_debug) TRACE("Found chip "+std::to_string(chip)+ " channel "+std::to_string(channel));
           bitstream.RemoveBits(13); // after that we expect n-times <1><xxx> => check MSB to be 1
 	  uint32_t word32 = bitstream.GetWord32();
 	  if ( (word32 & 0x80000000) != 0x80000000) {
@@ -303,13 +303,13 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
             // !!! Trailer looks the same in this definition! => Always check if a trailer is found
             if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER)
             {
-              if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: Module trailer found");
+              if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Module trailer found");
               break;
             }
 	    cntHits+=1;
             unsigned int hit = (bitstream.GetWord32() >> 28) & 0x7;
             if (sctEvent->ChipIsValid(chip)) sctEvent->AddHit(chip, channel++, hit);
-            if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: Hit pattern = " + std::to_string(hit) );
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Hit pattern = " + std::to_string(hit) );
             bitstream.RemoveBits(4);
 	    word32=bitstream.GetWord32();
           }
@@ -318,13 +318,13 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
         }
         if ((bitstream.GetWord32() & MASK_MODULE_NODATA) == TAG_MODULE_NODATA && praeambleFound) 
         {
-          if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: No Hit packet");
+          if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: No Hit packet");
           bitstream.RemoveBits(3);
           continue;
         }
 	if ((bitstream.GetWord32() & MASK_MODULE_TRAILER) == TAG_MODULE_TRAILER)
           {			  
-            if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: Module trailer found");
+            if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Module trailer found");
 	    
             break; //ignore anything coming after trailer... should maybe check that it is really empty
           }
@@ -341,7 +341,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
 	  }
 	  continue;
 	}
-        if (m_debug) DEBUG("TrackerDataFragment::DecodeModuleData :: WARNING: unable to decode bitstream. Removing 1 bit until alignment is found again.");
+        if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: WARNING: unable to decode bitstream. Removing 1 bit until alignment is found again.");
         bitstream.RemoveBits (1);          
       }
     }
