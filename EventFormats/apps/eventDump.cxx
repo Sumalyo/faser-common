@@ -4,13 +4,7 @@
 #include "EventFormats/TLBMonitoringFragment.hpp"
 #include "EventFormats/DigitizerDataFragment.hpp"
 #include "EventFormats/TrackerDataFragment.hpp"
-// #ifdef DAQLING_LOGGING
-// #include "Utils/Ers.hpp"
-// #include <ers/Issue.h>
-// #pragma message "Compiled with ers"
-// #else
-// #pragma message "Compiled without ers"
-// #endif
+
 using namespace DAQFormats;
 using namespace TLBDataFormat;
 using namespace TLBMonFormat;
