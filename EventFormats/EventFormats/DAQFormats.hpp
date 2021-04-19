@@ -18,11 +18,9 @@
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
-
+CREATE_EXCEPTION_TYPE(EFormatException,DAQFormats)
 namespace DAQFormats {
   typedef std::vector<uint8_t> byteVector;
-
-  class EFormatException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
   
   //FIXME: add Doxygen
 

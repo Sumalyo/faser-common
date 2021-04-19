@@ -25,8 +25,7 @@ static inline unsigned int GetBit(unsigned int word, int bit_location){
   word &= 0x1;
   return word;
 }
-
-class DigitizerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
+CREATE_EXCEPTION_TYPE(DigitizerDataException,DigitizerData)
 
 struct DigitizerDataFragment { 
 
@@ -40,7 +39,7 @@ struct DigitizerDataFragment {
     if( size < 16 ){
       //      ERROR("Cannot find a header with at least 4 32 bit words");
       //      ERROR("Data size : "<<size);
-      THROW(DigitizerDataException, "The fragment is not big enough to even be a header");
+      THROW(DigitizerData::DigitizerDataException, "The fragment is not big enough to even be a header");
     }
     
     // decode header
@@ -58,7 +57,7 @@ struct DigitizerDataFragment {
     if( (event.event_size*4) != size ){
           //  ERROR("Expected and observed size of payload do not agree");
           //  ERROR("Expected = "<<size<<"  vs.  Observed = "<<event.event_size*4);
-      THROW(DigitizerDataException, "Mismatch in payload size (" + std::to_string(size) + ") and expected size (" + std::to_string(event.event_size*4) + ")");
+      THROW(DigitizerData::DigitizerDataException, "Mismatch in payload size (" + std::to_string(size) + ") and expected size (" + std::to_string(event.event_size*4) + ")");
     }
     
     // parse the ADC count data
@@ -76,7 +75,7 @@ struct DigitizerDataFragment {
     if(event_size_no_header%n_channels_active != 0){
       //      ERROR("The amount of data and the number of channels are not divisible");
       //      ERROR("DataLength = "<<event_size_no_header<<"  /  NChannels = "<<n_channels_active);
-      THROW(DigitizerDataException, "Mismatch in data length and number of enabled channels");
+      THROW(DigitizerData::DigitizerDataException, "Mismatch in data length and number of enabled channels");
     }
     unsigned int words_per_channel = event_size_no_header/n_channels_active;
 
@@ -207,7 +206,7 @@ struct DigitizerDataFragment {
       // verify that the channel requested is in the map of adc counts
       if( event.adc_counts.find(channel)==event.adc_counts.end()){
 	//        ERROR("You are requesting data for channel "<<channel<<" for which there is no entry in the adc counts map.");
-        THROW(DigitizerDataException, "The requested channel is not in the adc counts map.");
+        THROW(DigitizerData::DigitizerDataException, "The requested channel is not in the adc counts map.");
       }
       
       // if they requested data from an empty channel, then tell them
@@ -286,7 +285,7 @@ inline std::ostream &operator<<(std::ostream &out, const DigitizerDataFragment &
       out<<std::endl;
     }
 
-  } catch ( DigitizerDataException& e ) {
+  } catch ( DigitizerData::DigitizerDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for Digitizer event"<<std::endl;
   }

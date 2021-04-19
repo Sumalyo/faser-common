@@ -12,8 +12,8 @@
 #include "Exceptions/Exceptions.hpp"
 #include "FletcherChecksum.hpp"
 
+CREATE_EXCEPTION_TYPE(TLBDataException,TLBDataFormat)
 namespace TLBDataFormat {
-class TLBDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 const uint32_t TRIGGER_HEADER_V1 = 0xFEAD000A;
 const uint32_t TRIGGER_HEADER_V2 = 0xFEAD00A0;
