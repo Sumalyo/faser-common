@@ -10,10 +10,8 @@
 #include <cstring> //memcpy, memset
 #include "Exceptions/Exceptions.hpp"
 #include "FletcherChecksum.hpp"
-
+CREATE_EXCEPTION_TYPE(TLBMonException,TLBMonFormat)
 namespace TLBMonFormat {
-
-class TLBMonException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
 const uint32_t MONITORING_HEADER_V1 = 0xFEAD0050;
 const uint32_t MONITORING_HEADER_V2 = 0xFEAD0005;
