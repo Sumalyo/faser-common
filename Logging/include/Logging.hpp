@@ -23,6 +23,7 @@
 #ifdef DAQLING_LOGGING
   #pragma message "Compiled with DAQling logger"
   #include "Utils/Ers.hpp"
+  #define TRACE(MSG)    do { ERS_DEBUG(1, MSG); } while (0)
 #else
 #ifndef ERS_HPP
 //Check if logging macros already defined.
