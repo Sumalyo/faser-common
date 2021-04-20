@@ -32,13 +32,11 @@ macro(add_faser_executable name)
     # Define the executable
     add_executable(${name} ${ARGN})
     if( EXISTS "${CMAKE_SOURCE_DIR}/daqling/src/Utils/Ers.hpp")
-    add_compile_definitions(DAQLING_LOGGING)
     	# Add the required logging
 	# target_sources(${name} PRIVATE "${CMAKE_SOURCE_DIR}/faser-common/Logging/src/Logger_impl.cpp")
     	# target_link_libraries(${name} zmq)
     endif()
 endmacro()
-
 
 add_subdirectory(Logging)
 add_subdirectory(Exceptions)
