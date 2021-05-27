@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
           case TrackerSourceID:
             if(showData && showTRB){
               try {
-                TrackerDataFragment tracker_data_frag = TrackerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                TrackerDataFragment tracker_data_frag(frag->payload<const uint32_t*>(), frag->payload_size());
                 if (debug_mode) tracker_data_frag.set_debug_on();
                 std::cout<<"Tracker data fragment:"<<std::endl;
                 std::cout<<tracker_data_frag<<std::endl;
