@@ -229,7 +229,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           if (LED==0)
           {
             // process first half of module data (led / ledx line)
-            if (event.GetModule(module) != nullptr) { ERROR("LED data already existed for this module. This shouldn't happen, and may lead to missing hit data!")}
+            if (event.GetModule(module) != nullptr) { ERROR("LED data already existed for this module. This shouldn't happen, and may lead to missing hit data!");}
             sctEvent = std::make_shared<SCTEvent>(module, l1id, bcid);
             event.SetModule(module, sctEvent);
             if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
