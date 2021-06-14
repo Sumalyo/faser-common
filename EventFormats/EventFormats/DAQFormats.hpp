@@ -401,4 +401,4 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull 
     return out;
 }
 
-
+#define customdatatypeList (DataFragment<EventFull>)(DataFragment<EventFragment>)
