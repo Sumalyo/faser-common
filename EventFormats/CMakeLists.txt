@@ -40,6 +40,7 @@ else()
   target_link_libraries(EventFormats INTERFACE Exceptions Logging )
 
   add_faser_executable(eventDump apps/eventDump.cxx)
+  target_link_libraries(eventDump EventFormats ers )
   target_link_libraries(eventDump EventFormats )
   add_faser_executable(eventFilter apps/eventFilter.cxx)
   target_link_libraries(eventFilter EventFormats )
