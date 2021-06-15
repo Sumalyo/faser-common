@@ -159,7 +159,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
 {
   for (uint8_t module = 0; module < MODULES_PER_FRAGMENT; module++)
   {
-    SCTEvent* sctEvent {nullptr};
+    std::shared_ptr<SCTEvent> sctEvent(nullptr);
     for (uint8_t LED = 0; LED < SIDES_PER_MODULE; LED++)
     {
       if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Decoding data for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ")." );
@@ -229,7 +229,8 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           if (LED==0)
           {
             // process first half of module data (led / ledx line)
-            sctEvent = new SCTEvent(module, l1id, bcid);
+            if (event.GetModule(module) != nullptr) { ERROR("LED data already existed for this module. This shouldn't happen, and may lead to missing hit data!");}
+            sctEvent = std::make_shared<SCTEvent>(module, l1id, bcid);
             event.SetModule(module, sctEvent);
             if (m_debug) TRACE("TrackerDataFragment::DecodeModuleData :: Added SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
           }
@@ -237,7 +238,7 @@ inline void TrackerDataFragment::DecodeModuleData(std::map< std::pair<uint8_t, u
           {
             sctEvent = event.GetModule(module);
             if (sctEvent == nullptr) {
-              sctEvent = new SCTEvent(module, l1id, bcid);
+              sctEvent = std::make_shared<SCTEvent>(module, l1id, bcid);
               event.SetModule(module, sctEvent);}
 
             if (m_debug && (sctEvent != nullptr)) TRACE("TrackerDataFragment::DecodeModuleData :: Found SCTEvent data object for (" + std::to_string(static_cast<uint32_t>(module)) + "," + std::to_string(static_cast<uint32_t>(LED)) + ").");
@@ -442,10 +443,12 @@ inline void Bitstream::RemoveBits(unsigned int n)
 //
 inline TrackerDataFragment::TRBEvent::~TRBEvent()
 {
+  /*
   for (auto sctevt : m_hits_per_module)
   {
     if (sctevt != nullptr) delete sctevt;
   }
+  */ // shared pointer, no longer needs to be explicitly deleted
 }
 
 inline SCTEvent::SCTEvent (uint8_t moduleID, unsigned int l1id, unsigned int bcid) 

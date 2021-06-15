@@ -59,7 +59,7 @@ make
 # Standalone Running/Testing
 
 ## Event Decoders
-Once you build the code, there is a primary executable [eventDump.cxx](EventFormats/app/eventDump.cxx)
+Once you build the code, there is a primary executable [eventDump.cxx](EventFormats/apps/eventDump.cxx)
 which is compiled into the executable in your build directory at `build/EventFormats/eventDump` which 
 can be run on test binary data to develop or understand the functionality of the event/fragment decoders.
 
@@ -85,4 +85,5 @@ bug in it and there are corrupted events in physics stream.  Two configurations 
    - 1 Hz monitoring data from the TLB
    - Only channel 1 is enabled for data readout from the Digitizer
    
-   
+ ## Event Filtering
+A second executable [eventFilter.cxx](EventFormats/apps/eventFilter.cxx) is also compiled in the build directory at `build/EventFormats/eventFilter`.  This application reads in a raw data file and can write out a subset of the events to a new raw data file.  Currently, this application can filter on event number, trigger type, or just some total number of events.  The options can be seen with `eventFilter -h`.

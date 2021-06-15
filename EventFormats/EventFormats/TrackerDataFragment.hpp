@@ -19,6 +19,7 @@
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 
 CREATE_EXCEPTION_TYPE(TrackerDataException,TrackerData)
@@ -193,8 +194,8 @@ struct TrackerDataFragment
     bool hasData(size_t module) const { return (event.GetModule(module) != nullptr); }
     const SCTEvent& operator[](size_t module) const { return *event.GetModule(module); }
 
-    using const_iterator = std::vector<SCTEvent*>::const_iterator;
-    using iterator = std::vector<SCTEvent*>::iterator;
+    using const_iterator = std::vector<std::shared_ptr<SCTEvent>>::const_iterator;
+    using iterator = std::vector<std::shared_ptr<SCTEvent>>::iterator;
 
     const_iterator cbegin() const { return event.m_hits_per_module.cbegin(); }
     const_iterator cend() const { return event.m_hits_per_module.cend(); }
@@ -224,8 +225,8 @@ struct TrackerDataFragment
     {
     public:
         TRBEvent() {}
-        SCTEvent* GetModule(size_t moduleID) const { return m_hits_per_module[moduleID]; }
-        void SetModule(size_t moduleID, SCTEvent* sctEvent) { m_hits_per_module[moduleID] = sctEvent; }
+        std::shared_ptr<SCTEvent> GetModule(size_t moduleID) const { return m_hits_per_module[moduleID]; }
+        void SetModule(size_t moduleID, std::shared_ptr<SCTEvent> sctEvent) { m_hits_per_module[moduleID] = sctEvent; }
 
         ~TRBEvent();
 
@@ -242,7 +243,7 @@ struct TrackerDataFragment
         uint32_t m_crc_calculated;
         std::vector< uint8_t > m_module_error_ids;
         std::map< std::pair<uint8_t, uint8_t>, std::vector<uint32_t> > m_modDB;
-        std::vector < SCTEvent* > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+        std::vector < std::shared_ptr<SCTEvent> > m_hits_per_module { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
         // prohibit copy and assign
         TRBEvent(const TRBEvent& other) = delete;
