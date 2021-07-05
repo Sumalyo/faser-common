@@ -8,7 +8,7 @@
 using namespace DAQFormats;
 using namespace TLBDataFormat;
 using namespace TLBMonFormat;
-
+using namespace TrackerData;
 static void usage() {
    std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] --debug <filename>\n"
               "   -f:                 print fragment header information\n"

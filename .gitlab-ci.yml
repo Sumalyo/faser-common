@@ -31,10 +31,10 @@ build_faser_common:
   script:
     - ls
     - pwd
-    - source setup.sh
+    - source setup.sh /daqling-spack-repo
     - mkdir -p build 
     - cd build
-    - cmake3 -DBE_PEDANTIC=ON ../
+    - cmake -DBE_PEDANTIC=ON ../
     - make -j8
   artifacts:
     paths:
@@ -53,7 +53,7 @@ test_decoder_tlb:
   script:
     - ls
     - pwd
-    - source setup.sh 
+    - source setup.sh /daqling-spack-repo 
     - cd build
     - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_Dec/Faser-Physics-000603-00003.raw Faser-Physics-000603-00003.raw
     - ./EventFormats/eventDump -f -d TLB -n 5 Faser-Physics-000603-00003.raw > output
@@ -84,7 +84,7 @@ test_decoder_digitizer:
   script:
     - ls
     - pwd
-    - source setup.sh 
+    - source setup.sh /daqling-spack-repo
     - cd build
     - xrdcp root://eoshome.cern.ch//eos/user/f/faserdaq/TestData/2020_April16/TLBDigitizer_lockdownsetup_200Hz_signal_coincidencePrescale1_input1Prescale2_20Hz_random_1Hz_monitoring/Faser-Physics-000000-00000.raw Faser-Physics-000000-00000.raw 
     - ./EventFormats/eventDump -f -d Digitizer -n 1 Faser-Physics-000000-00000.raw > output

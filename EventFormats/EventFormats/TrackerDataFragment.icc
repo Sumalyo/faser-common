@@ -370,7 +370,7 @@ inline Bitstream::Bitstream(std::vector<uint32_t> data) : m_currentBuffer{0}, m_
   m_bitsAvailable = (32 - m_usedBitsPerWord);
   // now we fill the remaining bits of the buffer
   if (m_bitsUsedOfNextWord > m_usedBitsPerWord) {
-    THROW(TrackerDataException, "Bitstream::Bitstream :: FATAL: bitsUsedOfNextWord too large!");
+    THROW(TrackerData::TrackerDataException, "Bitstream::Bitstream :: FATAL: bitsUsedOfNextWord too large!");
   }
   if (m_bitstreamData.size() == 0){ // no more data
     return;
@@ -501,7 +501,7 @@ inline void SCTEvent::AddError (unsigned int chip, unsigned int err)
     m_Errors.back().push_back(0xff);
     std::stringstream s;
     s << std::hex << chip;
-    THROW(TrackerDataException, "SCTEvent::AddError :: ERROR: AddError(): passed chipID is not known! chipID = 0x" + s.str());
+    THROW(TrackerData::TrackerDataException, "SCTEvent::AddError :: ERROR: AddError(): passed chipID is not known! chipID = 0x" + s.str());
   }
   m_Errors[it->second].push_back(err);
 }
@@ -525,7 +525,7 @@ inline void SCTEvent::AddHit (unsigned int chip, unsigned int strip, unsigned in
     s << std::hex << chip;
     m_complete = false;
     m_missingData = true;
-    THROW(TrackerDataException, "SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
+    THROW(TrackerData::TrackerDataException, "SCTEvent::AddHit :: ERROR: AddHit(): passed chipID is not known! chipID = 0x" + s.str());
   }
   m_Hits[it->second].push_back(std::make_pair(strip, pattern));
 }
@@ -552,7 +552,7 @@ inline unsigned int SCTEvent::GetNHits(size_t chip) const
     }
     std::stringstream s;
     s << std::hex << chip;
-    THROW(TrackerDataException, "SCTEvent::GetNHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
+    THROW(TrackerData::TrackerDataException, "SCTEvent::GetNHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Hits[it->second].size();
 }
@@ -565,7 +565,7 @@ inline const std::vector < std::pair<uint8_t, uint8_t> >& SCTEvent::GetHits(size
   if (it == m_chipIDMap.end()) {
     std::stringstream s;
     s << std::hex << chip;
-    THROW(TrackerDataException, "SCTEvent::GetHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
+    THROW(TrackerData::TrackerDataException, "SCTEvent::GetHits :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Hits[it->second];
 }
@@ -578,7 +578,7 @@ inline const std::vector < uint8_t >& SCTEvent::GetErrors(size_t chip) const
   if (it == m_chipIDMap.end()) {
     std::stringstream s;
     s << std::hex << chip;
-    THROW(TrackerDataException, "SCTEvent::GetErrors :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
+    THROW(TrackerData::TrackerDataException, "SCTEvent::GetErrors :: ERROR: passed chipID is not known! chipID = 0x" + s.str());
   }
   return m_Errors[it->second];
 }
@@ -625,7 +625,7 @@ inline std::ostream &operator<<(std::ostream &out, const TrackerDataFragment &ev
       }
     }
 
-  } catch ( TrackerDataException& e ) {
+  } catch ( TrackerData::TrackerDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for Tracker data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;
     out<<"Fragment size is "<<event.size()<<" bytes total"<<std::endl;

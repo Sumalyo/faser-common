@@ -20,6 +20,13 @@
 #include <iostream>
 #include <iomanip>
 
+#ifdef DAQLING_LOGGING
+  #pragma message "Compiled with DAQling logger"
+  #include "Utils/Ers.hpp"
+  #define TRACE(MSG)    do { ERS_DEBUG(1, MSG); } while (0)
+#else
+#ifndef ERS_HPP
+//Check if logging macros already defined.
 #pragma message "Compiled without DAQling logger"
 
 // Base log output - just printing to screen
@@ -35,9 +42,10 @@
 #define INFO(MSG)     LOG("INFO", MSG)
 #define WARNING(MSG)  LOG("WARNING", MSG)
 #define ERROR(MSG)    LOG("ERROR", MSG)
-#define CRITICAL(MSG) LOG("CRITICAL", MSG)
+#define FATAL(MSG) LOG("FATAL", MSG)
 
 // Level aliases
 #define NOTICE(MSG)   LOG("NOTICE", MSG)
 #define ALERT(MSG)    LOG("ALERT", MSG)
-
+#endif
+#endif

@@ -21,8 +21,8 @@
 #include <vector>
 #include <memory>
 
-class TrackerDataException : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };
 
+CREATE_EXCEPTION_TYPE(TrackerDataException,TrackerData)
 struct SCTEvent 
 {
 public:
