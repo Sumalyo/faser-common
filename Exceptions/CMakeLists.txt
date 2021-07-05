@@ -14,7 +14,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   set_target_properties(Exceptions PROPERTIES LINKER_LANGUAGE CXX)
 else()
   # Online build
-  target_link_libraries(Exceptions PUBLIC ers)
   add_library(Exceptions INTERFACE)
   target_include_directories(Exceptions INTERFACE ./)
 
