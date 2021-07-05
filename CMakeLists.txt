@@ -15,7 +15,7 @@ else()
 cmake_minimum_required(VERSION 3.4.3)
 
 project(faser_common)
-
+target_link_libraries(faser_common PUBLIC ers)
 option(BE_PEDANTIC "Compile pedantically" ON)
 
 # Require a C++17 compliant compiler
