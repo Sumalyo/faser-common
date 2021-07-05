@@ -14,4 +14,7 @@ export CXX='/opt/ohpc/pub/compiler/gcc/8.3.0/bin/g++'
 ## source spack repos path, to use daqling libraries(ers), if path is supplied:
 if [ $# -eq 1 ]; then
 source $1/spack/share/spack/setup-env.sh
+spack env activate daqling
+spack find
+spack load cmake
 fi
