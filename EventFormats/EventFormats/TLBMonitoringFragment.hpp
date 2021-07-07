@@ -16,6 +16,8 @@ namespace TLBMonFormat {
 const uint32_t MONITORING_HEADER_V1 = 0xFEAD0050;
 const uint32_t MONITORING_HEADER_V2 = 0xFEAD0005;
 const uint32_t MASK_DATA = 0xFFFFFF;
+const uint32_t MASK_FIRST_12b = 0xFFF; 
+const uint32_t MASK_SECOND_12b = 0xFFF000; 
 const uint32_t MASK_FRAMEID_32b = 0xF0000000;
 const uint32_t MASK_FRAMEID_TRIGLINE = 0xFF000000;
 const uint32_t FID_EVENT_ID = 0x10000000;
@@ -116,7 +118,8 @@ struct TLBMonitoringFragment {
       if ( valid() || m_debug )  return event.v1.m_orbit_id;
       THROW(TLBMonException, "Data not valid");
     }
-    uint32_t bc_id() const { return event.v1.m_bc_id & MASK_DATA; }
+    uint32_t bc_id() const { return event.v1.m_bc_id & MASK_FIRST_12b; }
+    uint32_t orbits_lost_counter() const { return (event.v1.m_bc_id & MASK_SECOND_12b)>>12; }
     uint32_t tbp( uint8_t trig_line ) const { 
       if ( trig_line >= MAX_TRIG_LINE ) THROW(TLBMonException, "index out of range");
       if ( valid() || m_debug ) return *(event.v1.m_tbp+trig_line)&MASK_DATA;
@@ -206,6 +209,7 @@ inline std::ostream &operator<<(std::ostream &out, const TLBMonFormat::TLBMonito
          out<<" TAP ORed: "<< event.tap_ORed()<<", TAV ORed: "<<event.tav_ORed();
     }
     out<<std::endl;
+    out<<" ext. orbits lost: "<<event.orbits_lost_counter()<<std::endl;
   } catch ( TLBMonFormat::TLBMonException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB mon event "<<event.event_id()<<", bcid "<<event.bc_id()

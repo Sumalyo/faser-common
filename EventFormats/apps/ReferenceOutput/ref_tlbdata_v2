@@ -16,6 +16,7 @@ TLB data fragment:
                  TBP:                           010000
           input_bits:                         00000000
  input_bits_next_clk:                         00000000
+    ext. orbits lost:                                0
 
 data format version: 0x2
 
@@ -33,6 +34,7 @@ TLB data fragment:
                  TBP:                           010000
           input_bits:                         00000000
  input_bits_next_clk:                         00000000
+    ext. orbits lost:                                0
 
 data format version: 0x2
 
@@ -50,6 +52,7 @@ TLB data fragment:
                  TBP:                           010000
           input_bits:                         00000000
  input_bits_next_clk:                         00000000
+    ext. orbits lost:                                0
 
 data format version: 0x2
 
@@ -67,6 +70,7 @@ TLB data fragment:
                  TBP:                           010000
           input_bits:                         00000000
  input_bits_next_clk:                         00000000
+    ext. orbits lost:                                0
 
 data format version: 0x2
 
@@ -84,6 +88,7 @@ TLB data fragment:
                  TBP:                           010000
           input_bits:                         00000000
  input_bits_next_clk:                         00000000
+    ext. orbits lost:                                0
 
 data format version: 0x2
 
