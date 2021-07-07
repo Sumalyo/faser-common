@@ -18,6 +18,8 @@ namespace TLBDataFormat {
 const uint32_t TRIGGER_HEADER_V1 = 0xFEAD000A;
 const uint32_t TRIGGER_HEADER_V2 = 0xFEAD00A0;
 const uint32_t MASK_DATA = 0xFFFFFF;
+const uint32_t MASK_FIRST_12b = 0xFFF; 
+const uint32_t MASK_SECOND_12b = 0xFFF000; 
 const uint8_t MASK_TBP = 0x3F;
 const uint16_t MASK_TAP_V1 = 0x3F00;
 const uint16_t MASK_TAP_V2 = 0xFC0;
@@ -89,7 +91,8 @@ struct TLBDataFragment {
       if ( valid() || m_debug )  return event.v1.m_orbit_id;
       THROW(TLBDataException, "Data not valid");
     }
-    uint32_t bc_id() const { return event.v1.m_bc_id & MASK_DATA; }
+    uint32_t bc_id() const { return event.v1.m_bc_id & MASK_FIRST_12b; }
+    uint32_t orbits_lost_counter() const { return (event.v1.m_bc_id & MASK_SECOND_12b)>>12; }
     uint8_t  tap() const {
       if ( valid() || m_debug )  {
         if (m_version < 0x2) return (event.v1.m_tbptap & MASK_TAP_V1)>>8;
@@ -142,7 +145,8 @@ inline std::ostream &operator<<(std::ostream &out, const TLBDataFormat::TLBDataF
     <<std::setw(22)<<" TAP: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<6>(event.tap())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" TBP: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<6>(event.tbp())<<std::setfill(' ')<<std::endl
     <<std::setw(22)<<" input_bits: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits())<<std::setfill(' ')<<std::endl
-    <<std::setw(22)<<" input_bits_next_clk: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits_next_clk())<<std::setfill(' ')<<std::endl;
+    <<std::setw(22)<<" input_bits_next_clk: "<<std::setfill(' ')<<std::setw(32)<<std::bitset<8>(event.input_bits_next_clk())<<std::setfill(' ')<<std::endl
+    <<std::setw(22)<<" ext. orbits lost: "<<std::setfill(' ')<<std::setw(32)<<event.orbits_lost_counter()<<std::setfill(' ')<<std::endl;
   } catch ( TLBDataFormat::TLBDataException& e ) {
     out<<e.what()<<std::endl;
     out<<"Corrupted data for TLB data event "<<event.event_id()<<", bcid "<<event.bc_id()<<std::endl;

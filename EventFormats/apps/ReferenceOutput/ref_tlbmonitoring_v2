@@ -18,6 +18,7 @@ TLB monitoring fragment:
 	tbp5:                        0	tap5:                        0	tav5:                        0
  deadtime veto count: 1, busy veto count: 0, rate_limiter veto count: 0, bcr veto count: 4, digi busy veto count: 0
  TAP ORed: 1143, TAV ORed: 0
+ ext. orbits lost: 0
 
 data format version: 0x2
 
@@ -33,6 +34,7 @@ TLB monitoring fragment:
 	tbp5:                        0	tap5:                        0	tav5:                        0
  deadtime veto count: 1, busy veto count: 0, rate_limiter veto count: 0, bcr veto count: 2, digi busy veto count: 0
  TAP ORed: 1141, TAV ORed: 0
+ ext. orbits lost: 0
 
 data format version: 0x2
 
@@ -48,6 +50,7 @@ TLB monitoring fragment:
 	tbp5:                        0	tap5:                        0	tav5:                        0
  deadtime veto count: 19, busy veto count: 16, rate_limiter veto count: 10, bcr veto count: 3, digi busy veto count: 0
  TAP ORed: 1126, TAV ORed: 1095
+ ext. orbits lost: 0
 
 data format version: 0x2
 
@@ -63,6 +66,7 @@ TLB monitoring fragment:
 	tbp5:                        0	tap5:                        0	tav5:                        0
  deadtime veto count: 21, busy veto count: 15, rate_limiter veto count: 8, bcr veto count: 6, digi busy veto count: 0
  TAP ORed: 1158, TAV ORed: 1125
+ ext. orbits lost: 0
 
 data format version: 0x2
 
@@ -78,6 +82,7 @@ TLB monitoring fragment:
 	tbp5:                        0	tap5:                        0	tav5:                        0
  deadtime veto count: 19, busy veto count: 14, rate_limiter veto count: 15, bcr veto count: 2, digi busy veto count: 0
  TAP ORed: 1132, TAV ORed: 1101
+ ext. orbits lost: 0
 
 data format version: 0x2
 
