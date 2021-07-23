@@ -2,7 +2,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "Calypso")
   # Calypso/Athena build
 
   message("Exceptions: Calypso")
-  add_compile_definitions(OFFLINE_BUILD)
   atlas_subdir(Exceptions)
 
   atlas_add_library ( Exceptions
@@ -16,5 +15,8 @@ else()
   # Online build
   add_library(Exceptions INTERFACE)
   target_include_directories(Exceptions INTERFACE ./)
+  if (${CMAKE_PROJECT_NAME} STREQUAL "daqling_top")
+    target_compile_definitions(Exceptions INTERFACE DAQLING_BUILD)
+  endif()
 
 endif()

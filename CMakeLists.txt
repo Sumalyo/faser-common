@@ -45,5 +45,4 @@ if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME))
    add_subdirectory(tests)
 endif()
 
-
 endif()

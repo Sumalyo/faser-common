@@ -8,12 +8,33 @@
 
 #pragma once
 
-#ifdef OFFLINE_BUILD
+#ifdef DAQLING_BUILD
+#pragma message "Compiled with ERS"
+#include <string>
+#include <ers/ers.h>
+ERS_DECLARE_ISSUE(Exceptions,                                                             // Namespace
+                  BaseException,                                                   // Class name
+                  message, // Message
+                  ((std::string)message))                      // Args
+
+#define THROW(exception,arg) throw exception(ERS_HERE,arg);
+#define CREATE_EXCEPTION_TYPE(exceptionName,nameSpace) ERS_DECLARE_ISSUE_BASE(nameSpace, \
+      exceptionName, \
+      Exceptions::BaseException, \
+      ERS_EMPTY, \
+      ((std::string)message), \
+      ERS_EMPTY)
+
+#else
 #pragma message "Compiled without ERS"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#define CREATE_EXCEPTION_TYPE(exceptionName,nameSpace) namespace nameSpace {class exceptionName : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };}
+#define THROW(exception,arg) throw exception(arg, __FILE__, __LINE__);
+
 
 namespace Exceptions {
 
@@ -34,23 +55,4 @@ namespace Exceptions {
     }
   };
 }
-#define CREATE_EXCEPTION_TYPE(exceptionName,nameSpace) namespace nameSpace {class exceptionName : public Exceptions::BaseException { using Exceptions::BaseException::BaseException; };}
-#define THROW(exception,arg) throw exception(arg, __FILE__, __LINE__);
-
-#else
-#pragma message "Compiled with ERS"
-#include <string>
-#include <ers/ers.h>
-ERS_DECLARE_ISSUE(Exceptions,                                                             // Namespace
-                  BaseException,                                                   // Class name
-                  message, // Message
-                  ((std::string)message))                      // Args
-
-#define THROW(exception,arg) throw exception(ERS_HERE,arg);
-#define CREATE_EXCEPTION_TYPE(exceptionName,nameSpace) ERS_DECLARE_ISSUE_BASE(nameSpace, \
-      exceptionName, \
-      Exceptions::BaseException, \
-      ERS_EMPTY, \
-      ((std::string)message), \
-      ERS_EMPTY)
 #endif
