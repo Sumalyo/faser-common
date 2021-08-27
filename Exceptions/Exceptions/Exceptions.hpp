@@ -9,7 +9,7 @@
 #pragma once
 
 #ifdef DAQLING_BUILD
-#pragma message "Compiled with ERS"
+//#pragma message "Compiled with ERS"
 #include <string>
 #include <ers/ers.h>
 ERS_DECLARE_ISSUE(Exceptions,                                                             // Namespace
