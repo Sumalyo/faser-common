@@ -60,6 +60,11 @@ for run, data in mappingData.items():
         assert isinstance(data[i][1], int), 'Plane number is not integer'
         assert data[i][0] >= -1 and data[i][0] <= 3, 'Invalid station number'
         assert data[i][1] >= -1 and data[i][1] <= 3, 'Invalid plane number'
+        assert (data[i][0] == -1 and data[i][1] == -1) or (data[i][0] != -1 and data[i][1] != -1), 'Invalid station/plane combination'
+    for i in range(15):
+        for j in range(15-i):
+            k = i + j + 1
+            assert (data[i][0] != data[k][0] or data[i][1] != data[k][1]) or (data[i][0] == -1 and data[i][1] == -1), 'Duplicated (station, plane) pair'
 
 # Data looks OK
 
