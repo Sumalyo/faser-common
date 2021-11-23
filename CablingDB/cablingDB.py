@@ -41,12 +41,29 @@ mappingData = {
      5050: [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1)],
     }
 
-from PyCool import cool, coral
+# Look for data entry errors
+
+print('Validating data')
+
+lastRun = -1
+for run, data in mappingData.items():
+    assert run > lastRun, 'Run numbers out of order'
+    lastRun = run
+    assert len(data) == 16, 'Run does not have 16 TRB entries'
+    for i in range(16):
+        assert len(data[i]) == 2, 'TRB entry does not have two values'
+        assert data[i][0] >= -1 and data[i][0] <= 3, 'Invalid station number'
+        assert data[i][1] >= -1 and data[i][1] <= 3, 'Invalid plane number'
+
+# Data looks OK
+
+from PyCool import cool
 
 dbSvc = cool.DatabaseSvcFactory.databaseService()
 connectString = 'sqlite://;schema=CABP200.db;dbname=OFLP200'
 
-print('recreating database')
+print('Recreating database')
+
 dbSvc.dropDatabase( connectString )
 db = dbSvc.createDatabase( connectString )
 
@@ -69,4 +86,5 @@ for firstValidRun, mapping in reversed(mappingData.items()):
     lastValid = ((firstValidRun - 1) << 32) | (cool.ValidityKeyMax & 0x00000000FFFFFFFF)
 
 db.closeDatabase()
-print('database completed')
+
+print('Database completed')
