@@ -47,7 +47,7 @@ maxInt32 = 0xFFFFFFFF
 
 print('Validating data')
 
-lastRun = -1
+lastRun = 0
 for run, data in mappingData.items():
     assert isinstance(run, int), 'Run number is not integer'
     assert run > lastRun, 'Run numbers out of order'
