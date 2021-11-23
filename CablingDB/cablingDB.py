@@ -50,8 +50,6 @@ print('recreating database')
 dbSvc.dropDatabase( connectString )
 db = dbSvc.createDatabase( connectString )
 
-sct_daq = db.createFolderSet('/SCT/DAQ','', True)
-
 cableSpec = cool.RecordSpecification()
 cableSpec.extend( 'station', cool.StorageType.Int32 )
 cableSpec.extend( 'plane'  , cool.StorageType.Int32 )
@@ -61,7 +59,6 @@ cableFolder = db.createFolder('/SCT/DAQ/CableMapping', cableFolderSpec, descript
 
 # There should be one record entered per TRB per IOV
 lastValid = cool.ValidityKeyMax
-
 for firstValidRun, mapping in reversed(mappingData.items()):
     firstValid = (firstValidRun << 32)
     for hardwareID in range(16):
@@ -72,3 +69,4 @@ for firstValidRun, mapping in reversed(mappingData.items()):
     lastValid = ((firstValidRun - 1) << 32) | (cool.ValidityKeyMax & 0x00000000FFFFFFFF)
 
 db.closeDatabase()
+print('database completed')
