@@ -41,6 +41,8 @@ mappingData = {
      5050: [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1), (-1, -1)],
     }
 
+maxInt32 = 0xFFFFFFFF
+
 # Look for data entry errors
 
 print('Validating data')
@@ -49,6 +51,7 @@ lastRun = -1
 for run, data in mappingData.items():
     assert isinstance(run, int), 'Run number is not integer'
     assert run > lastRun, 'Run numbers out of order'
+    assert run <= maxInt32, 'Run number out of range'
     lastRun = run
     assert len(data) == 16, 'Run does not have 16 TRB entries'
     for i in range(16):
