@@ -47,11 +47,14 @@ print('Validating data')
 
 lastRun = -1
 for run, data in mappingData.items():
+    assert isinstance(run, int), 'Run number is not integer'
     assert run > lastRun, 'Run numbers out of order'
     lastRun = run
     assert len(data) == 16, 'Run does not have 16 TRB entries'
     for i in range(16):
         assert len(data[i]) == 2, 'TRB entry does not have two values'
+        assert isinstance(data[i][0], int), 'Station number is not integer'
+        assert isinstance(data[i][1], int), 'Plane number is not integer'
         assert data[i][0] >= -1 and data[i][0] <= 3, 'Invalid station number'
         assert data[i][1] >= -1 and data[i][1] <= 3, 'Invalid plane number'
 
