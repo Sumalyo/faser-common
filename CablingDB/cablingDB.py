@@ -59,7 +59,7 @@ for run, data in mappingData.items():
         assert isinstance(data[i][0], int), 'Station number is not integer'
         assert isinstance(data[i][1], int), 'Plane number is not integer'
         assert data[i][0] >= -1 and data[i][0] <= 3, 'Invalid station number'
-        assert data[i][1] >= -1 and data[i][1] <= 3, 'Invalid plane number'
+        assert data[i][1] >= -1 and data[i][1] <= 2, 'Invalid plane number'
         assert (data[i][0] == -1 and data[i][1] == -1) or (data[i][0] != -1 and data[i][1] != -1), 'Invalid station/plane combination'
     for i in range(15):
         if data[i][0] != -1:
