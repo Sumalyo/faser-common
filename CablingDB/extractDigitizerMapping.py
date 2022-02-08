@@ -25,10 +25,10 @@ TI12_map = [
     ('veto', 0, 1, 0),
     ('veto', 1, 0, 0),
     ('veto', 1, 1, 0),
-    ('trig', 0, 0, 1),  # Digitizer 8
-    ('trig', 0, 0, 0), 
-    ('trig', 0, 1, 1), 
-    ('trig', 0, 1, 0), 
+    ('trigger', 0, 0, 1),  # Digitizer 8
+    ('trigger', 0, 0, 0), 
+    ('trigger', 0, 1, 1), 
+    ('trigger', 0, 1, 0), 
     ('preshower', 0, 0, 0), # Digitizer 12
     ('preshower', 0, 1, 0),
     ('none', 0),  # Add dummy number or else tuple is flattened
@@ -44,8 +44,8 @@ TB_map = [
     ('calo', 0, 0, 0),
     ('preshower', 0, 0, 0),  # Digitizer 6
     ('preshower', 0, 1, 0),
-    ('trig', 0, 0, 0), # Digitizer 8
-    ('trig', 0, 1, 0), 
+    ('trigger', 0, 0, 0), # Digitizer 8
+    ('trigger', 0, 1, 0), 
     ('none', 0),
     ('none', 0),
     ('none', 0),
