@@ -5,6 +5,21 @@ import copy
 import pprint
 import sys
 import requests
+import argparse
+
+# Parse any command-line options
+parser = argparse.ArgumentParser(description="Digitizer Mapping Checker")
+
+parser.add_argument("-r", "--firstRun", default=0,
+                    help="Specify first run to consider (default: all)")
+
+args = parser.parse_args()
+try:
+    first_run = int(args.firstRun)
+except Exception as e:
+    print("Error parsing first run:")
+    print(e)
+    sys.exit(-1)
 
 # This only works on lxplus
 response = requests.get("http://faser-runnumber.web.cern.ch/RunList")
@@ -16,6 +31,7 @@ digitizer_map={}
 # Calo: (row, mod, pmt)
 # Veto/Preshower/Trigger: (station, plate, pmt)
 
+# Orignal TI12 detector, without FASERnu veto
 TI12_map = [
     ('calo', 0, 1, 0),  # Digitizer 0
     ('calo', 0, 0, 0),
@@ -32,6 +48,28 @@ TI12_map = [
     ('preshower', 0, 0, 0), # Digitizer 12
     ('preshower', 0, 1, 0),
     ('none', 0),  # Add dummy number or else tuple is flattened
+    ('clock', 0) # Digitizer 15
+] 
+
+# TI12 map as of run 6520, when the FASERnu veto is installed
+# Installed 3/15/2022, first non-test run 6525
+# Also, rename trigger to timing
+TI12_6520_map = [
+    ('calo', 0, 1, 0),  # Digitizer 0
+    ('calo', 0, 0, 0),
+    ('calo', 1, 1, 0),
+    ('calo', 1, 0, 0),
+    ('vetonu', 0, 0, 0),  # Digitizer 4
+    ('vetonu', 0, 1, 0),
+    ('veto', 1, 0, 0),     # Digitizer 6
+    ('veto', 1, 1, 0),
+    ('timing', 0, 0, 1),  # Digitizer 8
+    ('timing', 0, 0, 0), 
+    ('timing', 0, 1, 1), 
+    ('timing', 0, 1, 0), 
+    ('preshower', 0, 0, 0), # Digitizer 12
+    ('preshower', 0, 1, 0),
+    ('veto', 0, 1, 0), # Digitizer 14
     ('clock', 0) # Digitizer 15
 ] 
 
@@ -55,12 +93,15 @@ TB_map = [
 ]
 
 for info in runs:
+
+    runno=info["runnumber"]
+    if runno < first_run: continue
+
     # Skip runtypes we don't want to reconstruct
     runtype = info['type']
     if "Calibration" in runtype: continue
     if runtype == "Test": continue
 
-    runno=info["runnumber"]
     detectors=info["detectors"]
     digs=[det for det in detectors if det.startswith("DIG")]
     if not digs: continue
@@ -147,7 +188,10 @@ for info in runs:
             print(f"ERROR: TI12 run {runno} with unusal number of TRBs: {trbIDs}")
             sys.exit(1)
 
-        digitizer_map[runno] = copy.copy(TI12_map)
+        if runno < 6520:
+            digitizer_map[runno] = copy.copy(TI12_map)
+        else:
+            digitizer_map[runno] = copy.copy(TI12_6520_map)
 
     # Remove any channels not enabled in readout
     first = True

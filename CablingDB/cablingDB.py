@@ -528,9 +528,45 @@ digi_map = {
         ('preshower', 0, 0, 0),
         ('preshower', 0, 1, 0),
         ('none', 0),
+        ('clock', 0)],
+ 6525: [('calo', 0, 1, 0),
+        ('calo', 0, 0, 0),
+        ('calo', 1, 1, 0),
+        ('calo', 1, 0, 0),
+        ('vetonu', 0, 0, 0),
+        ('vetonu', 0, 1, 0),
+        ('veto', 1, 0, 0),
+        ('veto', 1, 1, 0),
+        ('timing', 0, 0, 1),
+        ('timing', 0, 0, 0),
+        ('timing', 0, 1, 1),
+        ('timing', 0, 1, 0),
+        ('preshower', 0, 0, 0),
+        ('preshower', 0, 1, 0),
+        ('veto', 0, 1, 0),
         ('clock', 0)]
 }
 
+
+# Range map from extractDigitizerScale.py
+range_map = {
+ 432: {0: 2.0,
+       1: 2.0,
+       2: 2.0,
+       3: 2.0,
+       4: 2.0,
+       5: 2.0,
+       6: 2.0,
+       7: 2.0,
+       8: 2.0,
+       9: 2.0,
+       10: 2.0,
+       11: 2.0,
+       12: 2.0,
+       13: 2.0,
+       14: 2.0,
+       15: 2.0}
+}
 
 # Look for data entry errors
 
@@ -573,7 +609,7 @@ for run, data in digi_map.items():
         assert isinstance(data[i][1], int), 'Digitizer station is not int'
         assert isinstance(data[i][2], int), 'Digitizer plane is not int'
         assert isinstance(data[i][3], int), 'Digitizer pmt is not int'
-        assert data[i][0] in ['trigger', 'veto', 'preshower', 'calo'], 'Invalid type'
+        assert data[i][0] in ['trigger', 'timing', 'veto', 'vetonu', 'preshower', 'calo'], 'Invalid type'
         assert data[i][1] >= -1 and data[i][1] <= 1, 'Invalid station number'
         assert data[i][2] >= -1 and data[i][2] <= 3, 'Invalid plate number'
         assert data[i][3] >= -1 and data[i][3] <= 1, 'Invalid pmt number'
@@ -635,7 +671,8 @@ for firstValidRun, mapping in reversed(digi_map.items()):
             cableRecord['row'] = mapping[channel][1]
             cableRecord['module'] = mapping[channel][2]
             cableRecord['pmt'] = mapping[channel][3]
-        elif cableRecord['type'] in ['trigger', 'veto', 'preshower']:
+        # Already asserted allowable types above
+        elif len(mapping[channel]) == 4:
             cableRecord['station'] = mapping[channel][1]
             cableRecord['plate'] = mapping[channel][2]
             cableRecord['pmt'] = mapping[channel][3]
@@ -644,7 +681,27 @@ for firstValidRun, mapping in reversed(digi_map.items()):
 
     lastValid = ((firstValidRun - 1) << 32) | (cool.ValidityKeyMax & 0x00000000FFFFFFFF)
 
+# Add digitizer scale
+print('Recreating digitizer scale')
 
+digiSpec = cool.RecordSpecification()
+digiSpec.extend('range', cool.StorageType.Float)
+
+digiFolderSpec = cool.FolderSpecification(cool.FolderVersioning.SINGLE_VERSION, digiSpec)
+digiFolder = db.createFolder('/WAVE/DAQ/Range', digiFolderSpec, description, True)
+
+# There should be one record entered per IOV
+lastValid = cool.ValidityKeyMax
+for firstValidRun, mapping in reversed(range_map.items()):
+    firstValid = (firstValidRun << 32)
+    for channel in range(16):
+        digiRecord = cool.Record(digiSpec)
+        digiRecord['range'] = mapping[channel]
+        digiFolder.storeObject( firstValid, lastValid, digiRecord, int(channel) )
+
+    lastValid = ((firstValidRun - 1) << 32) | (cool.ValidityKeyMax & 0x00000000FFFFFFFF)
+
+# Done
 db.closeDatabase()
 
 print('Database completed')
