@@ -537,10 +537,10 @@ digi_map = {
         ('vetonu', 0, 1, 0),
         ('veto', 1, 0, 0),
         ('veto', 1, 1, 0),
-        ('timing', 0, 0, 1),
-        ('timing', 0, 0, 0),
-        ('timing', 0, 1, 1),
-        ('timing', 0, 1, 0),
+        ('trigger', 0, 0, 1),
+        ('trigger', 0, 0, 0),
+        ('trigger', 0, 1, 1),
+        ('trigger', 0, 1, 0),
         ('preshower', 0, 0, 0),
         ('preshower', 0, 1, 0),
         ('veto', 0, 1, 0),
@@ -609,7 +609,7 @@ for run, data in digi_map.items():
         assert isinstance(data[i][1], int), 'Digitizer station is not int'
         assert isinstance(data[i][2], int), 'Digitizer plane is not int'
         assert isinstance(data[i][3], int), 'Digitizer pmt is not int'
-        assert data[i][0] in ['trigger', 'timing', 'veto', 'vetonu', 'preshower', 'calo'], 'Invalid type'
+        assert data[i][0] in ['trigger', 'veto', 'vetonu', 'preshower', 'calo'], 'Invalid type'
         assert data[i][1] >= -1 and data[i][1] <= 1, 'Invalid station number'
         assert data[i][2] >= -1 and data[i][2] <= 3, 'Invalid plate number'
         assert data[i][3] >= -1 and data[i][3] <= 1, 'Invalid pmt number'

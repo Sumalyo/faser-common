@@ -63,10 +63,10 @@ TI12_6520_map = [
     ('vetonu', 0, 1, 0),
     ('veto', 1, 0, 0),     # Digitizer 6
     ('veto', 1, 1, 0),
-    ('timing', 0, 0, 1),  # Digitizer 8
-    ('timing', 0, 0, 0), 
-    ('timing', 0, 1, 1), 
-    ('timing', 0, 1, 0), 
+    ('trigger', 0, 0, 1),  # Digitizer 8
+    ('trigger', 0, 0, 0), 
+    ('trigger', 0, 1, 1), 
+    ('trigger', 0, 1, 0), 
     ('preshower', 0, 0, 0), # Digitizer 12
     ('preshower', 0, 1, 0),
     ('veto', 0, 1, 0), # Digitizer 14
