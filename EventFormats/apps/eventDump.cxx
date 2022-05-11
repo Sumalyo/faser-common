@@ -4,10 +4,12 @@
 #include "EventFormats/TLBMonitoringFragment.hpp"
 #include "EventFormats/DigitizerDataFragment.hpp"
 #include "EventFormats/TrackerDataFragment.hpp"
+#include "EventFormats/BOBRDataFragment.hpp"
 
 using namespace DAQFormats;
 using namespace TLBDataFormat;
 using namespace TLBMonFormat;
+using namespace BOBRDataFormat;
 using namespace TrackerData;
 static void usage() {
    std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] --debug <filename>\n"
@@ -28,6 +30,7 @@ int main(int argc, char **argv) {
   bool showTLB=false;
   bool showTRB=false;
   bool showDigitizer=false;
+  bool showBOBR=false;
   int nEventsMax = -1;
   static int debug_mode;
   int opt;
@@ -54,6 +57,7 @@ int main(int argc, char **argv) {
       showData = true;
       if(optarg==NULL){
         std::cout<<"No systems specified - printing all"<<std::endl;
+        showBOBR=true;
         showTLB=true;
         showTRB=true;
         showDigitizer=true;
@@ -67,10 +71,14 @@ int main(int argc, char **argv) {
         else if(systems.find("TRB")==0){
           showTRB=true;
         }
+        else if(systems.find("BOBR")==0){
+          showBOBR=true;
+        }
         else if(systems.find("Digitizer")==0){
           showDigitizer=true;
         }
         else if(systems.find("all")==0){
+	  showBOBR=true;
           showTLB=true;
           showTRB=true;
           showDigitizer=true;
@@ -83,6 +91,7 @@ int main(int argc, char **argv) {
       std::cout<<"DumpingData TLB       : "<<showTLB<<std::endl;
       std::cout<<"DumpingData TRB       : "<<showTRB<<std::endl;
       std::cout<<"DumpingData Digitizer : "<<showDigitizer<<std::endl;
+      std::cout<<"DumpingData BOBR      : "<<showBOBR<<std::endl;
       break;
     case 'n':
       std::cout<<"Specifying Nvents : "<<optarg<<std::endl;
@@ -165,6 +174,15 @@ int main(int argc, char **argv) {
                 DigitizerDataFragment digitizer_data_frag = DigitizerDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
                 std::cout<<"Digitizer data fragment:"<<std::endl;
                 std::cout<<digitizer_data_frag<<std::endl;
+              }
+            }
+            break;
+          case BOBRSourceID:
+            if(showData && showBOBR){
+              if (event.event_tag() == PhysicsTag ) {
+                BOBRDataFragment bobr_data_frag = BOBRDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+                std::cout<<"BOBR data fragment:"<<std::endl;
+                std::cout<<bobr_data_frag<<std::endl;
               }
             }
             break;

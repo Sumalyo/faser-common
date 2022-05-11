@@ -39,7 +39,8 @@ namespace DAQFormats {
   enum SourceIDs {
     TriggerSourceID = 0x020000,
     TrackerSourceID = 0x030000,
-    PMTSourceID = 0x040000
+    PMTSourceID     = 0x040000,
+    BOBRSourceID    = 0x050000
   };
   
   const uint16_t EventHeaderVersion = 0x0001;
