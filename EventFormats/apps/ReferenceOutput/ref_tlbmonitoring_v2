@@ -5,6 +5,7 @@ DumpingData select systems : TLB
 DumpingData TLB       : 1
 DumpingData TRB       : 0
 DumpingData Digitizer : 0
+DumpingData BOBR      : 0
 Specifying Nvents : 5
 Event:        1 (0x00000000)  run=1222 tag=3 bc=3556 trig=0x0000 status=0x0000 time=1614595250618484 #fragments=1 payload=   156 bytes
  Fragment: tag=3 source=0x20000 bc=3556 status=0x0000 payload=  120 bytes
