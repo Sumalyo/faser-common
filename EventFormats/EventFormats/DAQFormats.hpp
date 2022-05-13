@@ -289,6 +289,9 @@ namespace DAQFormats {
       if (header.bc_id!=fragment->bc_id()) {
 	status |= EventStatus::BCIDMismatch;
       }
+      if (fragment->source_id()==SourceIDs::TriggerSourceID)
+	header.bc_id=fragment->bc_id();  //TLB should be primary source BCID
+
       //BP: could check for event ID mismatch, but should not happen...
 
       updateStatus(fragment->status()|status);
