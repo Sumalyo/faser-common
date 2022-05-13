@@ -34,7 +34,7 @@ struct BOBRDataFragment {
   BOBRDataFragment( const uint32_t *data, size_t size ) {
     if (size!=sizeof(BOBREventV1)) 
       THROW(BOBRDataFormat::BOBRDataException, "BOBR fragment size is not correct");
-    if (data[0]!=BOBR_HEADER_V1)
+    if (reinterpret_cast<const uint16_t*> (data)[0]!=BOBR_HEADER_V1)
       THROW(BOBRDataFormat::BOBRDataException, "Unknown BOBR fragment version");
     m_size = size;
     m_debug = false;
@@ -49,6 +49,12 @@ struct BOBRDataFragment {
     // getters
     uint16_t header() const { return event.m_header; }
     uint16_t status() const { return event.m_status; }
+  bool clock_unlocked() const { return (event.m_status&1)!=0; }
+  bool ttc_ready() const { return (event.m_status&(1<<8))!=0; }
+  bool local_40MHz_present() const { return (event.m_status&(1<<9))!=0; }
+  bool local_turnclock_present() const { return (event.m_status&(1<<10))!=0; }
+  bool ttcb_available() const { return (event.m_status&(1<<11))!=0; }
+  bool ttc_errors() const { return (event.m_status&(1<<12))!=0; }
   uint32_t gpstime_seconds() const { return event.m_gpstime_seconds; }
   uint32_t gpstime_useconds() const { return event.m_gpstime_useconds; }
   uint32_t turncount() const { return event.m_turncount; }
@@ -71,13 +77,21 @@ struct BOBRDataFragment {
 inline std::ostream &operator<<(std::ostream &out, const BOBRDataFormat::BOBRDataFragment &event) {
   try {
     out
-      <<std::setw(22)<<" gps_time: "<<std::setfill(' ')<<std::setw(25)<<event.gpstime_seconds()<<"."<<std::setfill('0')<<std::setw(6)<<event.gpstime_useconds()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" LHC turn count: "<<std::setfill(' ')<<std::setw(32)<<event.turncount()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" LHC fill number: "<<std::setfill(' ')<<std::setw(32)<<event.fillnumber()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" LHC machine mode: "<<std::setfill(' ')<<std::setw(32)<<event.machinemode()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" Beam momentum [GeV]: "<<std::setfill(' ')<<std::setw(32)<<0.12*event.beam_momentum()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" Beam 1 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam1_intensity()<<std::setfill(' ')<<std::endl
-      <<std::setw(22)<<" Beam 2 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam2_intensity()<<std::setfill(' ')<<std::endl;
+      <<std::setw(27)<<"Status: "<<std::setfill(' ')<<std::setw(28)<<std::hex<<"0x"<<std::setfill('0')<<std::setw(4)<<event.status()<<std::dec<<std::setfill(' ')<<std::endl;
+    if (event.clock_unlocked()) out<<std::setw(40)<<"Clock card unlocked"<<std::endl;
+    if (!event.ttc_ready()) out<<std::setw(40)<<"TTC not ready"<<std::endl;
+    if (!event.local_40MHz_present()) out<<std::setw(40)<<"No LHC clock"<<std::endl;
+    if (!event.local_turnclock_present()) out<<std::setw(40)<<"No LHC orbit"<<std::endl;
+    if (!event.ttcb_available()) out<<std::setw(40)<<"No TTC-b signal"<<std::endl;
+    if (event.ttc_errors()) out<<std::setw(40)<<"TTC errors"<<std::endl;
+    out
+      <<std::setw(27)<<" gps_time: "<<std::setfill(' ')<<std::setw(25)<<event.gpstime_seconds()<<"."<<std::setfill('0')<<std::setw(6)<<event.gpstime_useconds()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" LHC turn count: "<<std::setfill(' ')<<std::setw(32)<<event.turncount()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" LHC fill number: "<<std::setfill(' ')<<std::setw(32)<<event.fillnumber()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" LHC machine mode: "<<std::setfill(' ')<<std::setw(32)<<event.machinemode()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" Beam momentum [GeV]: "<<std::setfill(' ')<<std::setw(32)<<0.12*event.beam_momentum()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" Beam 1 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam1_intensity()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" Beam 2 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam2_intensity()<<std::setfill(' ')<<std::endl;
       
   } catch ( BOBRDataFormat::BOBRDataException& e ) {
     out<<e.what()<<std::endl;

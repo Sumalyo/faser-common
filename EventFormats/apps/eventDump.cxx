@@ -179,11 +179,9 @@ int main(int argc, char **argv) {
             break;
           case BOBRSourceID:
             if(showData && showBOBR){
-              if (event.event_tag() == PhysicsTag ) {
-                BOBRDataFragment bobr_data_frag = BOBRDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
-                std::cout<<"BOBR data fragment:"<<std::endl;
-                std::cout<<bobr_data_frag<<std::endl;
-              }
+	      BOBRDataFragment bobr_data_frag = BOBRDataFragment(frag->payload<const uint32_t*>(), frag->payload_size());
+	      std::cout<<"BOBR data fragment:"<<std::endl;
+	      std::cout<<bobr_data_frag<<std::endl;
             }
             break;
           default:
