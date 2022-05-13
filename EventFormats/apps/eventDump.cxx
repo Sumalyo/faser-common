@@ -12,7 +12,7 @@ using namespace TLBMonFormat;
 using namespace BOBRDataFormat;
 using namespace TrackerData;
 static void usage() {
-   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/all] [-n nEventsMax] --debug <filename>\n"
+   std::cout<<"Usage: eventDump [-f] [-d TLB/TRB/Digitizer/BOBR/all] [-n nEventsMax] --debug <filename>\n"
               "   -f:                 print fragment header information\n"
               "   -d <subdetector>:   print full event information for subdetector\n"
               "   -n <no. events>:    print only first n events\n"

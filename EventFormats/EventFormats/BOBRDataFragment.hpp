@@ -8,6 +8,7 @@
 
 #pragma once
 #include <bitset>
+#include <map>
 #include <cstring> //memcpy
 #include "Exceptions/Exceptions.hpp"
 #include "FletcherChecksum.hpp"
@@ -60,6 +61,12 @@ struct BOBRDataFragment {
   uint32_t turncount() const { return event.m_turncount; }
   uint32_t fillnumber() const { return event.m_fillnumber; }
   uint16_t machinemode() const { return event.m_machinemode; }
+  const std::string machinemode_txt() const { 
+    if (modeNames.find(event.m_machinemode)!=modeNames.end()) 
+      return modeNames.find(event.m_machinemode)->second;
+    else
+      return "UNKNOWN";
+  }
   uint16_t beam_momentum() const { return event.m_beam_momentum; }
   uint32_t beam1_intensity() const { return event.m_beam1_intensity; }
   uint32_t beam2_intensity() const { return event.m_beam2_intensity; }
@@ -71,6 +78,24 @@ struct BOBRDataFragment {
     BOBREventV1 event;
     size_t m_size;
     bool m_debug;
+  const std::map<uint16_t,const std::string> modeNames={ 
+    { 1, "NOMODE " },
+    { 2, "SETUP" },
+    { 3, "INJ. PROB" },
+    { 4, "INJ. SETUP" },
+    { 5, "INJ. PHYSICS" },
+    { 6, "PREPARE RAMP" },
+    { 7, "RAMP" },
+    { 8, "FLAT TOP" },
+    { 9, "SQUEEZE" },
+    { 10, "ADJUST" },
+    { 11, "STABLE BEAM" },
+    { 13, "BEAM DUMP" },
+    { 14, "RAMPDOWN" },
+    { 15, "RECOVERY" },
+    { 19, "CYCLING" },
+    { 21, "NO BEAM" },
+  };
 };
 }
 
@@ -82,13 +107,13 @@ inline std::ostream &operator<<(std::ostream &out, const BOBRDataFormat::BOBRDat
     if (!event.ttc_ready()) out<<std::setw(40)<<"TTC not ready"<<std::endl;
     if (!event.local_40MHz_present()) out<<std::setw(40)<<"No LHC clock"<<std::endl;
     if (!event.local_turnclock_present()) out<<std::setw(40)<<"No LHC orbit"<<std::endl;
-    if (!event.ttcb_available()) out<<std::setw(40)<<"No TTC-b signal"<<std::endl;
+    if (!event.ttcb_available()) out<<std::setw(40)<<"No TTC-b (LHC info) signal"<<std::endl;
     if (event.ttc_errors()) out<<std::setw(40)<<"TTC errors"<<std::endl;
     out
       <<std::setw(27)<<" gps_time: "<<std::setfill(' ')<<std::setw(25)<<event.gpstime_seconds()<<"."<<std::setfill('0')<<std::setw(6)<<event.gpstime_useconds()<<std::setfill(' ')<<std::endl
       <<std::setw(27)<<" LHC turn count: "<<std::setfill(' ')<<std::setw(32)<<event.turncount()<<std::setfill(' ')<<std::endl
       <<std::setw(27)<<" LHC fill number: "<<std::setfill(' ')<<std::setw(32)<<event.fillnumber()<<std::setfill(' ')<<std::endl
-      <<std::setw(27)<<" LHC machine mode: "<<std::setfill(' ')<<std::setw(32)<<event.machinemode()<<std::setfill(' ')<<std::endl
+      <<std::setw(27)<<" LHC machine mode: "<<std::setfill(' ')<<std::setw(27)<<event.machinemode_txt()<<std::setfill(' ')<<" ("<<std::setw(2)<<event.machinemode()<<")"<<std::endl
       <<std::setw(27)<<" Beam momentum [GeV]: "<<std::setfill(' ')<<std::setw(32)<<0.12*event.beam_momentum()<<std::setfill(' ')<<std::endl
       <<std::setw(27)<<" Beam 1 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam1_intensity()<<std::setfill(' ')<<std::endl
       <<std::setw(27)<<" Beam 2 intensity [1e10p]: "<<std::setfill(' ')<<std::setw(32)<<event.beam2_intensity()<<std::setfill(' ')<<std::endl;
