@@ -56,7 +56,8 @@ namespace DAQFormats {
     MissingFragment = 1<<7,  
     EmptyFragment = 1<<8,
     DuplicateFragment = 1<<9,
-    ErrorFragment = 1<<10    // used by event builder to wrap incoming non-deciphable data
+    ErrorFragment = 1<<10,    // used by event builder to wrap incoming non-deciphable data
+    Compressed = 1 << 11 // Indicates a Compressed event
   };
 
   /** \brief This class define DAQ fragment header encapsulating raw data
@@ -259,9 +260,18 @@ namespace DAQFormats {
       const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
       byteVector* full=new byteVector(rawHeader,rawHeader+sizeof(header));
       for(const auto& frag: fragments) {
-	frag.second->rawAppend(full);
+	        frag.second->rawAppend(full);
       }
       return full;
+    }
+
+    byteVector* raw_fragments() {
+      //const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
+      byteVector* fragmentraw=new byteVector();
+      for(const auto& frag: fragments) {
+	        frag.second->rawAppend(fragmentraw);
+      }
+      return fragmentraw;
     }
 
     ~EventFull() {
@@ -329,7 +339,7 @@ namespace DAQFormats {
 
     // getters here
     uint8_t event_tag() const { return header.event_tag; }
-    uint8_t status() const { return header.status; }
+    uint16_t status() const { return header.status; }
     uint64_t event_id() const { return header.event_id; }
     uint64_t event_counter() const { return header.event_counter; }
     uint16_t bc_id() const { return header.bc_id; }
@@ -396,7 +406,7 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull 
        <<" tag="<<std::dec<<static_cast<int>(ev.event_tag())
        <<" bc="<<std::dec<<std::setw(4)<<ev.bc_id()
        <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<ev.trigger_bits()
-       <<" status=0x"<<std::hex<<std::setw(4)<<static_cast<int>(ev.status())
+       <<" status=0x"<<std::hex<<std::setw(5)<<static_cast<int>(ev.status())
        <<std::setfill(' ')
        <<" time="<<std::dec<<ev.timestamp()  //FIXME: should be readable
        <<" #fragments="<<ev.fragment_count()
