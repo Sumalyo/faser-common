@@ -18,7 +18,7 @@ double sizeByteMetric(const std::string& filename);
 //bool compressString(const std::string& inputString,const std::string& outputFilename, int mode);
 //bool zstdCompressor(std::ifstream& ifs,std::ofstream& ofs);
 //bool zstdCompressorString(const std::string& input,const std::string& outputFilename);
-bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent);
+bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent,bool reporting);
 //void showHelp(std::string progname);
 }
 #endif

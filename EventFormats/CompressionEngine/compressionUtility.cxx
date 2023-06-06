@@ -17,7 +17,7 @@ double sizeByteMetric(const std::string& filename) {
 }
 
 // Demo implementation of Event Compression - TDO Move this to a class based implemenation
-bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent) {
+bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent, bool reporting) {
     if (!inputevent) {
         std::cerr << "Error: input vector pointer is null" << std::endl;
         return false;
@@ -56,19 +56,68 @@ bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uin
     // Destroy the zstd compression context
     ZSTD_freeCCtx(ctx);
 
+    if (reporting){
     std::cout << "Input size: " << inputevent->size() << " bytes" << std::endl;
     std::cout << "Compressed size: " << compressedSize << " bytes" << std::endl;
     const double compressionRatio = static_cast<double>(inputevent->size()) / compressedSize;
-    std::cout << "Compression ratio: " << compressionRatio << std::endl;
+    std::cout << "Compression ratio: " << compressionRatio << std::endl;}
 
     return true;
 }
 
+/*
+Insert Support for zlibcompression
+*/
+
 class EventCompressor{
+    /*
+    Event Compressor Interface
+    - Add support for Compressor configuration
+    - Add support Logging (On Demand)
+    - Add support to track the file stream being used
+
+    - 
+    */
+protected:
+    std::string __loggingJson;
+    bool __loggingMode;
   public:
-        virtual bool Compressevent() = 0;
+        //virtual bool Compressevent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent) = 0;
+        virtual bool Compressevent(bool logmode = false) =0;
         virtual void ResultMetrics() =0;
+        EventCompressor()
+        {
+            __loggingJson= "Logs/default.json";
+            __loggingMode=false;
+        }
+
+
 };
+
+class ZstdCompressor : EventCompressor
+{
+    public:
+    bool Compressevent  ( bool logmode = false) override{
+            this->__loggingMode = logmode;
+            return false;
+        }
+        void ResultMetrics() override{
+            
+        }
+};
+
+class ZlibCompressor : EventCompressor
+{
+    public:
+    bool Compressevent  ( bool logmode = false ) override{
+            this->__loggingMode = logmode;
+            return false;
+        }
+        void ResultMetrics() override{
+            
+        }
+};
+
 
 
 
