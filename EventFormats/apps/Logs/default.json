@@ -1,0 +1,14 @@
+{
+    "FileName":"",
+    "Date":"",
+    "No of Events":10,
+    "EventData":[{
+        "Event Header":{
+            "Header Field":"Header Value"
+        },
+        "Input size":"",
+        "Output Size":"",
+        "Compression Ratio":"",
+        "Time for Compression":""
+    }]
+}
