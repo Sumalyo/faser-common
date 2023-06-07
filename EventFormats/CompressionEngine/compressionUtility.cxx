@@ -8,6 +8,36 @@ TODO :: Currently using std error. Try and use FASER Exception format
 CREATE_EXCEPTION_TYPE(CompressionEException,CompressionUtility)
 namespace CompressionUtility{
 
+typedef struct EventHeader{
+    std::string Event;
+    std::string run;
+    std::string tag;
+    std::string bc;
+    std::string trig;
+    std::string stattus;
+    std::string time;
+    int fragmentCount;
+    int payloadSizw;
+}EventHeader;
+
+typedef struct EventData {
+  EventHeader eventHeader;
+  std::string inputSize;
+  std::string outputSize;
+  std::string compressionRatio;
+  std::string timeForCompression;
+}EventData;
+
+typedef struct compressionUtilityLog
+{
+    std::string Filename;
+    std::string Date;
+    int eventCounnt;
+    std::vector<EventData> evdata;
+
+}compressionUtilityLog;
+
+
 // Function to get the size of a file in bytes
 double sizeByteMetric(const std::string& filename) {
     std::ifstream fileToAnalyze(filename, std::ios::binary);

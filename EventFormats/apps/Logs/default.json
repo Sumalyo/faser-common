@@ -1,6 +1,8 @@
 {
     "FileName":"",
     "Date":"",
+    "Compressor":"",
+    "Compressor Config":"",
     "No of Events":10,
     "EventData":[{
         "Event Header":{
