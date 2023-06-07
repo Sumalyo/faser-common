@@ -41,7 +41,7 @@ else()
 
   add_library(CompressionEngine INTERFACE)
   target_include_directories(CompressionEngine INTERFACE ./)
-  target_link_libraries(CompressionEngine INTERFACE Exceptions Logging )
+  target_link_libraries(CompressionEngine INTERFACE Exceptions Logging EventFormats)
 
   add_faser_executable(eventDump apps/eventDump.cxx)
   add_faser_executable(eventFilter apps/eventFilter.cxx)

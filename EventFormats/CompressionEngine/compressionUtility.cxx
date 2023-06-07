@@ -4,7 +4,6 @@ TODO :: Currently using std error. Try and use FASER Exception format
         Add logging capability for metrics
 */
 # include "compressionlib.hpp"
-#include <nlohmann/json.hpp>
 CREATE_EXCEPTION_TYPE(CompressionEException,CompressionUtility)
 namespace CompressionUtility{
 
@@ -95,6 +94,11 @@ bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uin
     return true;
 }
 
+bool zstdCompressorEventDAQ(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent ){
+    outputevent = {1,2,3,4};
+    std::cout<<inputEvent<<std::endl;
+    return false;
+}
 /*
 Insert Support for zlibcompression
 */
@@ -156,4 +160,6 @@ class ZlibCompressor : EventCompressor
 
 /*
 APIs for Compression Events or Fragments or other Faser Data Formats to be added here
+Plan for Logging:
+
 */

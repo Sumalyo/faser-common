@@ -138,12 +138,14 @@ int main(int argc, char **argv) {
       */
       std::vector<uint8_t>* x = event.raw_fragments();
       std::vector<uint8_t> compressedData;
+      CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
     if (CompressionUtility::zstdCompressorEvent(x, compressedData,false)) {
         std::cout << "Compression successful" << std::endl;
         event.updateStatus(1<<11);
     } else {
         std::cerr << "Compression failed" << std::endl;
     }
+
 
       std::cout<<event<<std::endl;
       if (showFragments) {

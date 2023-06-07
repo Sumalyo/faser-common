@@ -9,6 +9,8 @@
 #include <zstd.h>
 #include <vector>
 #include "Exceptions/Exceptions.hpp"
+#include <nlohmann/json.hpp>
+#include "EventFormats/DAQFormats.hpp"
 // #define CHUNK_SIZE 32768
 #define CHUNK_SIZE 32768
 #define ZSTD_LEVEL 15
@@ -19,6 +21,7 @@ double sizeByteMetric(const std::string& filename);
 //bool zstdCompressor(std::ifstream& ifs,std::ofstream& ofs);
 //bool zstdCompressorString(const std::string& input,const std::string& outputFilename);
 bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent,bool reporting);
+bool zstdCompressorEventDAQ(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
 //void showHelp(std::string progname);
 }
 #endif
