@@ -124,7 +124,12 @@ int main(int argc, char **argv) {
   
   // The file input
   int nEventsRead=0;
-  
+  CompressionUtility::configMap zstdConfig = {
+    {"compressionLevel","3"} 
+  }; // TODO Read this from a config JSON
+  CompressionUtility::ZstdCompressor zstdComp;
+  zstdComp.configCompression(zstdConfig);
+  zstdComp.setupCompressionAndLogging(filename,"1/1/2000"); // TODO insert system Date for Run
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
@@ -136,12 +141,15 @@ int main(int argc, char **argv) {
       - Write the compressed event out to a new file
       - Record all relevant metrices Investigation and analysis
       */
-      std::vector<uint8_t>* x = event.raw_fragments();
+      //std::vector<uint8_t>* x = event.raw_fragments();
+
+
       std::vector<uint8_t> compressedData;
-      CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
-    if (CompressionUtility::zstdCompressorEvent(x, compressedData,false)) {
+      //zstdComp.Compressevent(event,compressedData);
+      //CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
+    if (zstdComp.Compressevent(event,compressedData)) {
         std::cout << "Compression successful" << std::endl;
-        event.updateStatus(1<<11);
+        //event.updateStatus(1<<11);
     } else {
         std::cerr << "Compression failed" << std::endl;
     }
@@ -236,4 +244,6 @@ int main(int argc, char **argv) {
     }
     
   }
+  zstdComp.closeCompressor();
+  zstdComp.writeToJson("logTest.json");
 }

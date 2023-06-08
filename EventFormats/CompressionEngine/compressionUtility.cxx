@@ -4,37 +4,8 @@ TODO :: Currently using std error. Try and use FASER Exception format
         Add logging capability for metrics
 */
 # include "compressionlib.hpp"
+#include "Logging.hpp"
 CREATE_EXCEPTION_TYPE(CompressionEException,CompressionUtility)
-typedef struct EventHeader{
-    std::string Event = "0x00";
-    std::string run = "0x00";
-    std::string tag = "0x00";
-    std::string bc = "0x00";
-    std::string trig = "0x00";
-    std::string stattus = "0x00";
-    std::string time = "0x00";
-    int fragmentCount = 0;
-    int payloadSize = 0;
-}EventHeader;
-
-typedef struct EventData {
-  EventHeader eventHeader;
-  std::string inputSize = "0 bytes";
-  std::string outputSize = "0 bytes";
-  std::string compressionRatio = "0";
-  std::string timeForCompression = "0";
-}EventData;
-
-typedef struct compressionUtilityLog
-{
-    std::string Filename = "default";
-    std::string Date = "default";
-    std::string Compressor = "No Compressor Selected";
-    std::string compressorConfig = "No Compressor Selected";
-    int eventCount = 0;
-    std::vector<EventData> evdata = {};
-
-}compressionUtilityLog;
 
 namespace nlohmann {
 
@@ -47,7 +18,7 @@ struct adl_serializer<EventHeader> {
             {"tag", header.tag},
             {"bc", header.bc},
             {"trig", header.trig},
-            {"status", header.stattus},
+            {"status", header.status},
             {"time", header.time},
             {"fragmentCount", header.fragmentCount},
             {"payloadSize", header.payloadSize}
@@ -60,7 +31,7 @@ struct adl_serializer<EventHeader> {
         j.at("tag").get_to(header.tag);
         j.at("bc").get_to(header.bc);
         j.at("trig").get_to(header.trig);
-        j.at("status").get_to(header.stattus);
+        j.at("status").get_to(header.status);
         j.at("time").get_to(header.time);
         j.at("fragmentCount").get_to(header.fragmentCount);
         j.at("payloadSize").get_to(header.payloadSize);
@@ -112,7 +83,7 @@ struct adl_serializer<compressionUtilityLog> {
 
 namespace CompressionUtility
 {
-typedef std::map<std::string, std::string> configMap;
+
 using namespace nlohmann;
 // Function to get the size of a file in bytes
 double sizeByteMetric(const std::string& filename) {
@@ -127,7 +98,7 @@ bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uin
     if (!inputevent) {
         std::cerr << "Error: input vector pointer is null" << std::endl;
         return false;
-    } // Compress Event 
+    } // Compress Event - Omit for now
 
     // Create the zstd compression context
     ZSTD_CCtx* ctx = ZSTD_createCCtx();
@@ -180,7 +151,7 @@ bool zstdCompressorEventDAQ(DAQFormats::EventFull& inputEvent, std::vector<uint8
 Insert Support for zlibcompression
 */
 
-class EventCompressor{
+// class EventCompressor{
     /*
     Event Compressor Interface
     - Add support for Compressor configuration - In HashMap
@@ -189,37 +160,47 @@ class EventCompressor{
     - 
     */
 
-  public:
-    compressionUtilityLog logstruct;
-    std::map<std:: string,std::string> CompressorConfig;
-    std::string mapToString(const configMap& myMap) {
+//   public:
+//     compressionUtilityLog logstruct;
+//     bool __isLogging;
+//     std::map<std:: string,std::string> CompressorConfig;
+
+    std::string EventCompressor::mapToString(const configMap& myMap) 
+    {
     std::string result;
     for (const auto& pair : myMap) {
         result += pair.first + ":" + pair.second + "\n";
     }
     return result;
-}
+    }
         //virtual bool Compressevent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent) = 0;
-    virtual void configCompression(configMap& config) = 0;
-    virtual bool setupCompressionAndLoggingg(std::string Filename,std::string date) = 0;
-    virtual bool setupCompression() = 0;
-    virtual bool Compressevent(bool logmode = false) =0; // Working
-    virtual void closeCompressor() = 0;
+    // virtual void EventCompressor::configCompression(configMap& config) = 0;
+    // virtual bool EventCompressor::setupCompressionAndLoggingg(std::string Filename,std::string date) = 0;
+    // virtual bool EventCompressor::setupCompression() = 0;
+    /*
+    For now the plan is to only use this to log various metrics for compression and not use the compressed Event fragment 
+    To build a new Event. The best way here seems to be by using some constrctor for EventFull that would update the framement 
+    of the event and set the appropriate fileds in the Header, return it so that it can be written to a file outout stream.
     
-    void initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config){
+    */
+    // virtual bool EventCompressor::Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) =0;
+
+    // virtual void EventCompressor::closeCompressor() = 0;
+    
+    void EventCompressor::initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config){
         this->logstruct.Filename=Filename;
         this->logstruct.Date=date;
         this->logstruct.Compressor = Compressor;
         this->logstruct.compressorConfig = config;
         
     }
-    void addEvetData(EventData evData)
+    void EventCompressor::addEvetData(EventData evData)
     {
         this->logstruct.evdata.push_back(evData);
         this->logstruct.eventCount+=1;
     }
 
-    void displayCompressionUtilityLog() {
+    void EventCompressor::displayCompressionUtilityLog() {
     std::cout << "Filename: " << this->logstruct.Filename << std::endl;
     std::cout << "Date: " << this->logstruct.Date << std::endl;
     std::cout << "Event Count: " << this->logstruct.eventCount << std::endl;
@@ -231,7 +212,7 @@ class EventCompressor{
         std::cout << "  Tag: " << eventData.eventHeader.tag << std::endl;
         std::cout << "  BC: " << eventData.eventHeader.bc << std::endl;
         std::cout << "  Trig: " << eventData.eventHeader.trig << std::endl;
-        std::cout << "  Status: " << eventData.eventHeader.stattus << std::endl;
+        std::cout << "  Status: " << eventData.eventHeader.status << std::endl;
         std::cout << "  Time: " << eventData.eventHeader.time << std::endl;
         std::cout << "  Fragment Count: " << eventData.eventHeader.fragmentCount << std::endl;
         std::cout << "  Payload Size: " << eventData.eventHeader.payloadSize << std::endl;
@@ -246,10 +227,10 @@ class EventCompressor{
 
 }
 
-    void writeToJson(std::string filename)
+    void EventCompressor::writeToJson(std::string filename)
     {
         json log = this->logstruct;
-        std::ofstream outputFile("/home/osboxes/gsocContributions/faser-common/EventFormats/apps/Logs/"+filename+".json",std::ios::out);
+        std::ofstream outputFile("../EventFormats/apps/Logs/"+filename+".json",std::ios::out);
         if (outputFile.is_open()) {
             outputFile << log.dump(4); // The "4" argument adds indentation for better readability
             outputFile.close();
@@ -258,14 +239,14 @@ class EventCompressor{
             std::cout << "Unable to create JSON file." << std::endl;
         }
     }
-};
+// };
 
 
-class ZstdCompressor : EventCompressor
-{
-    public:
-    ZSTD_CCtx* ctx;
-    void configCompression(configMap& config) override{
+// class ZstdCompressor : EventCompressor
+// {
+//     public:
+//     ZSTD_CCtx* ctx;
+    void ZstdCompressor::configCompression(configMap& config) {
         for (const auto& pair : config) {
         this->CompressorConfig[pair.first] = pair.second;  // I can use this to set up enforcemnets later like
 
@@ -275,11 +256,12 @@ class ZstdCompressor : EventCompressor
         and throw exceptions if an invalid config is passed on;
         */
     }
-    bool setupCompression() override
+    bool ZstdCompressor::setupCompression()
     {
         ZSTD_CCtx* ctx = ZSTD_createCCtx();
         if (!ctx) {
-        std::cerr << "Error: could not create zstd compression context" << std::endl;
+        ERROR("Error: could not create zstd compression context");
+        //std::cerr << "Error: could not create zstd compression context" << std::endl;
         return false;
         }
         try
@@ -288,7 +270,7 @@ class ZstdCompressor : EventCompressor
             const int compressionLevel = std::stoi(valueOfKey1);
             if (ZSTD_isError(ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel))) {
             ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel);
-            std::cerr << "Error: could not set zstd compression level" << std::endl;
+            ERROR( "Error: could not set zstd compression level" );
             return false;
             }
         }
@@ -297,25 +279,77 @@ class ZstdCompressor : EventCompressor
             std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
             return false;
         }
+        INFO("Log :: ZSTD Compressor is set up");  
+        this->__isLogging=false;
         return true;
     }
-    bool setupCompressionAndLoggingg(std::string Filename,std::string date) override
-    {
+    bool ZstdCompressor::setupCompressionAndLogging(std::string Filename,std::string date){
+        
         std::string config = this->mapToString(this->CompressorConfig);
         this->initializeStruct(Filename,date,"ZSTD COmpressor",config);
         bool isSetup = this->setupCompression();
+        if(isSetup)
+        {
+            this->__isLogging=true; // Indicate that the Logging is set up
+            INFO("Log:: Logging Enabled in Compressor");
+        }
         return isSetup;
     }
 
 
-    bool Compressevent  ( bool logmode = false) override{
-            return false;
+    bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) {
+            /*
+            Steps TO DO
+            - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
+            - [ ] Load the Compressor Configuration appropriately
+            - [ ] Do Compression and store result in a stream of bytes
+            - [ ] Record metrics and populate struct accordingly
+            */
+           
+           std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+        
+           const size_t maxOutputSize = ZSTD_compressBound(eventFragments->size());
+    
+           outputevent.resize(maxOutputSize);
+    
+            // Compress the input data and store the compressed data in the output vector
+            int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]);
+            const size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
+            if (ZSTD_isError(compressedSize)) {
+
+                std::cerr << "Error: zstd compression failed: " << ZSTD_getErrorName(compressedSize) << std::endl;
+                return false;
+            } // Compress Event
+            // Resize the output vector to the actual compressed size
+            outputevent.resize(compressedSize); // Compress Event
+            inputEvent.updateStatus(1<<11);
+            if (this->__isLogging)
+            {
+                EventData evData;
+                evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+                evData.eventHeader.run = std::to_string(inputEvent.run_number());
+                evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+                evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
+                evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+                evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+                evData.eventHeader.payloadSize = inputEvent.payload_size();
+                evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+                evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+                evData.inputSize = std::to_string(eventFragments->size()); // TODO See Best Implementation
+                evData.outputSize = std::to_string(compressedSize);
+                evData.compressionRatio = std::to_string(static_cast<double>(eventFragments->size()) / compressedSize);
+                this->addEvetData(evData);
+            }
+            
+
+            return true;
         }
-    void closeCompressor() override
+    void ZstdCompressor::closeCompressor()
     {
+        INFO("Zstd Compressor is gracefully closed");
         ZSTD_freeCCtx(ctx);
     }
-};
+// };
 
 // class ZlibCompressor : EventCompressor
 // {
