@@ -10,6 +10,7 @@
 #include <vector>
 #include <filesystem>
 #include "Exceptions/Exceptions.hpp"
+#include "Logging.hpp"
 #include <nlohmann/json.hpp>
 #include "EventFormats/DAQFormats.hpp"
 // #define CHUNK_SIZE 32768
@@ -68,13 +69,18 @@ public:
     virtual bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) = 0;
     virtual void closeCompressor() = 0;
     void initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config);
-    void addEvetData(EventData evData);
+    void addEventData(EventData evData);
     void displayCompressionUtilityLog();
     void writeToJson(std::string filename);
 };
 class ZstdCompressor: public EventCompressor {
 public:
-    ZSTD_CCtx* ctx =  ZSTD_createCCtx();
+    ZSTD_CCtx* ctx;
+    ZstdCompressor():EventCompressor()
+    {
+    DEBUG("DEFAULT CONSTRCTOR CALLED");
+    ctx =  ZSTD_createCCtx();
+    };
     void configCompression(configMap& config);
     bool setupCompression();
     bool setupCompressionAndLogging(std::string Filename, std::string date);

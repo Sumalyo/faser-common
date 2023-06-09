@@ -1,0 +1,41 @@
+{
+    "Date": "1/1/2000",
+    "Filename": "/home/osboxes/faser-daq/gsoc_data/Faser-Physics-009015-00015.raw",
+    "evdata": [
+        {
+            "compressionRatio": "2.037901",
+            "eventHeader": {
+                "Event": "669449",
+                "bc": "1355",
+                "fragmentCount": 14,
+                "payloadSize": 22368,
+                "run": "9015",
+                "status": "2048",
+                "tag": "0",
+                "time": "1667883265357458",
+                "trig": "4"
+            },
+            "inputSize": "22368",
+            "outputSize": "10976",
+            "timeForCompression": "0"
+        },
+        {
+            "compressionRatio": "2.042211",
+            "eventHeader": {
+                "Event": "669450",
+                "bc": "2436",
+                "fragmentCount": 14,
+                "payloadSize": 22352,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667883265359794",
+                "trig": "4"
+            },
+            "inputSize": "22352",
+            "outputSize": "10945",
+            "timeForCompression": "0"
+        }
+    ],
+    "eventCount": 2
+}

@@ -4,7 +4,7 @@ TODO :: Currently using std error. Try and use FASER Exception format
         Add logging capability for metrics
 */
 # include "compressionlib.hpp"
-#include "Logging.hpp"
+
 CREATE_EXCEPTION_TYPE(CompressionEException,CompressionUtility)
 
 namespace nlohmann {
@@ -194,7 +194,7 @@ Insert Support for zlibcompression
         this->logstruct.compressorConfig = config;
         
     }
-    void EventCompressor::addEvetData(EventData evData)
+    void EventCompressor::addEventData(EventData evData)
     {
         this->logstruct.evdata.push_back(evData);
         this->logstruct.eventCount+=1;
@@ -338,7 +338,7 @@ Insert Support for zlibcompression
                 evData.inputSize = std::to_string(eventFragments->size()); // TODO See Best Implementation
                 evData.outputSize = std::to_string(compressedSize);
                 evData.compressionRatio = std::to_string(static_cast<double>(eventFragments->size()) / compressedSize);
-                this->addEvetData(evData);
+                this->addEventData(evData);
             }
             
 

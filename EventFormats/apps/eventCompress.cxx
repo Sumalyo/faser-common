@@ -245,5 +245,12 @@ int main(int argc, char **argv) {
     
   }
   zstdComp.closeCompressor();
-  zstdComp.writeToJson("logTest.json");
+  if(zstdComp.__isLogging)
+  {
+    zstdComp.writeToJson("logTest");
+  }
+  else
+  {
+    INFO("Logging was not setup for compressor hence no JSON log created");
+  }
 }
