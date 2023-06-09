@@ -127,10 +127,15 @@ int main(int argc, char **argv) {
   CompressionUtility::configMap zstdConfig = {
     {"compressionLevel","3"} 
   }; // TODO Read this from a config JSON
-  CompressionUtility::ZstdCompressor zstdComp;
-  zstdComp.configCompression(zstdConfig);
-  zstdComp.setupCompressionAndLogging(filename,"1/1/2000"); // TODO insert system Date for Run
-  zstdComp.supportDecompression();
+
+  // CompressionUtility::ZstdCompressor zstdComp;
+  // zstdComp.configCompression(zstdConfig);
+  // zstdComp.setupCompressionAndLogging(filename,"1/1/2000"); // TODO insert system Date for Run
+  // zstdComp.supportDecompression();
+  CompressionUtility::EventCompressor* zstdComp = new CompressionUtility::ZstdCompressor();
+  zstdComp->configCompression(zstdConfig);
+  zstdComp->setupCompressionAndLogging(filename,"1/1/2000");
+  zstdComp->supportDecompression();
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
@@ -148,7 +153,7 @@ int main(int argc, char **argv) {
       std::vector<uint8_t> compressedData;
       //zstdComp.Compressevent(event,compressedData);
       //CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
-    if (zstdComp.Compressevent(event,compressedData))
+    if (zstdComp->Compressevent(event,compressedData))
        {
         std::cout << "Compression successful" << std::endl;
         //event.updateStatus(1<<11);
@@ -158,7 +163,7 @@ int main(int argc, char **argv) {
         std::cerr << "Compression failed" << std::endl;
         }
       std::vector<uint8_t> decompressedData;
-        if (zstdComp.deCompressevent(event,compressedData,decompressedData))
+        if (zstdComp->deCompressevent(event,compressedData,decompressedData))
         {
         std::cout << "Decompression successful" << std::endl;
         //event.updateStatus(1<<11);
@@ -258,10 +263,10 @@ int main(int argc, char **argv) {
     }
     
   }
-  zstdComp.closeCompressor();
-  if(zstdComp.__isLogging)
+  zstdComp->closeCompressor();
+  if(zstdComp->__isLogging)
   {
-    zstdComp.writeToJson("logTest");
+    zstdComp->writeToJson("logTest");
   }
   else
   {

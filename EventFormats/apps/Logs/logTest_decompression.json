@@ -19,7 +19,7 @@
             },
             "inputSize": "22368",
             "outputSize": "10976",
-            "timeTaken": "389"
+            "timeTaken": "263"
         },
         {
             "compressionRatio": "2.000000",
@@ -36,7 +36,7 @@
             },
             "inputSize": "22352",
             "outputSize": "10945",
-            "timeTaken": "195"
+            "timeTaken": "570"
         },
         {
             "compressionRatio": "2.000000",
@@ -53,7 +53,7 @@
             },
             "inputSize": "22372",
             "outputSize": "10897",
-            "timeTaken": "193"
+            "timeTaken": "199"
         },
         {
             "compressionRatio": "2.000000",
@@ -70,7 +70,7 @@
             },
             "inputSize": "22368",
             "outputSize": "11028",
-            "timeTaken": "315"
+            "timeTaken": "838"
         },
         {
             "compressionRatio": "2.000000",
@@ -87,7 +87,7 @@
             },
             "inputSize": "22356",
             "outputSize": "10917",
-            "timeTaken": "81"
+            "timeTaken": "3043"
         },
         {
             "compressionRatio": "2.000000",
@@ -104,7 +104,7 @@
             },
             "inputSize": "22368",
             "outputSize": "11078",
-            "timeTaken": "207"
+            "timeTaken": "261"
         },
         {
             "compressionRatio": "2.000000",
@@ -138,7 +138,7 @@
             },
             "inputSize": "22356",
             "outputSize": "10869",
-            "timeTaken": "192"
+            "timeTaken": "79"
         },
         {
             "compressionRatio": "2.000000",
@@ -155,7 +155,7 @@
             },
             "inputSize": "22368",
             "outputSize": "10848",
-            "timeTaken": "255"
+            "timeTaken": "213"
         },
         {
             "compressionRatio": "2.000000",
@@ -172,7 +172,7 @@
             },
             "inputSize": "22372",
             "outputSize": "11036",
-            "timeTaken": "189"
+            "timeTaken": "1588"
         }
     ],
     "eventCount": 10
