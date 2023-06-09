@@ -78,7 +78,6 @@ public:
     ZSTD_CCtx* ctx;
     ZstdCompressor():EventCompressor()
     {
-    DEBUG("DEFAULT CONSTRCTOR CALLED");
     ctx =  ZSTD_createCCtx();
     };
     void configCompression(configMap& config);

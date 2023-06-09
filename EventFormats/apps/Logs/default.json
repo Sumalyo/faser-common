@@ -1,6 +1,8 @@
 {
     "Date": "<Run Date>",
     "Filename": "<Name_of_file>",
+    "Compressor": "<Compressor Used>",
+    "compressorConfig": "compressionLevel:3 etc..",
     "evdata": [
         {
             "compressionRatio": "2.037900",

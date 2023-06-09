@@ -65,6 +65,8 @@ struct adl_serializer<compressionUtilityLog> {
         j = json{
             {"Filename", log.Filename},
             {"Date", log.Date},
+            {"Compressor",log.Compressor},
+            {"compressorConfig",log.compressorConfig},
             {"eventCount", log.eventCount},
             {"evdata", log.evdata}
         };
@@ -73,6 +75,8 @@ struct adl_serializer<compressionUtilityLog> {
     static void from_json(const json& j, compressionUtilityLog& log) {
         j.at("Filename").get_to(log.Filename);
         j.at("Date").get_to(log.Date);
+        j.at("Compressor").get_to(log.Compressor);
+        j.at("compressorConfig").get_to(log.compressorConfig);
         j.at("eventCount").get_to(log.eventCount);
         j.at("evdata").get_to(log.evdata);
     }
@@ -203,6 +207,8 @@ Insert Support for zlibcompression
     void EventCompressor::displayCompressionUtilityLog() {
     std::cout << "Filename: " << this->logstruct.Filename << std::endl;
     std::cout << "Date: " << this->logstruct.Date << std::endl;
+    std::cout << "Compressor: " << this->logstruct.Compressor << std::endl;
+    std::cout << "compressorConfig: " << this->logstruct.compressorConfig << std::endl;
     std::cout << "Event Count: " << this->logstruct.eventCount << std::endl;
 
     for (const EventData& eventData : this->logstruct.evdata) {

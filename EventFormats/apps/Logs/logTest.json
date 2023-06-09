@@ -1,6 +1,8 @@
 {
+    "Compressor": "ZSTD COmpressor",
     "Date": "1/1/2000",
     "Filename": "/home/osboxes/faser-daq/gsoc_data/Faser-Physics-009015-00015.raw",
+    "compressorConfig": "compressionLevel:3\n",
     "evdata": [
         {
             "compressionRatio": "2.037901",
