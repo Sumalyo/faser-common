@@ -46,7 +46,7 @@ struct adl_serializer<EventData> {
             {"inputSize", eventData.inputSize},
             {"outputSize", eventData.outputSize},
             {"compressionRatio", eventData.compressionRatio},
-            {"timeForCompression", eventData.timeForCompression}
+            {"timeTaken", eventData.timeTaken}
         };
     }
 
@@ -55,7 +55,7 @@ struct adl_serializer<EventData> {
         j.at("inputSize").get_to(eventData.inputSize);
         j.at("outputSize").get_to(eventData.outputSize);
         j.at("compressionRatio").get_to(eventData.compressionRatio);
-        j.at("timeForCompression").get_to(eventData.timeForCompression);
+        j.at("timeTaken").get_to(eventData.timeTaken);
     }
 };
 
@@ -226,7 +226,7 @@ Insert Support for zlibcompression
         std::cout << "Input Size: " << eventData.inputSize << std::endl;
         std::cout << "Output Size: " << eventData.outputSize << std::endl;
         std::cout << "Compression Ratio: " << eventData.compressionRatio << std::endl;
-        std::cout << "Time for Compression: " << eventData.timeForCompression << std::endl;
+        std::cout << "Time Taken: " << eventData.timeTaken << std::endl;
 
         std::cout << std::endl;
     }

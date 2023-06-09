@@ -33,7 +33,7 @@ typedef struct EventData {
   std::string inputSize = "0 bytes";
   std::string outputSize = "0 bytes";
   std::string compressionRatio = "0";
-  std::string timeForCompression = "0";
+  std::string timeTaken = "0";
 }EventData;
 
 typedef struct compressionUtilityLog

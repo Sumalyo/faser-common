@@ -19,7 +19,7 @@
             },
             "inputSize": "22368",
             "outputSize": "10976",
-            "timeForCompression": "0"
+            "timeTaken": "0"
         },
         {
             "compressionRatio": "2.042211",
@@ -36,7 +36,7 @@
             },
             "inputSize": "22352",
             "outputSize": "10945",
-            "timeForCompression": "0"
+            "timeTaken": "0"
         }
     ],
     "eventCount": 2
