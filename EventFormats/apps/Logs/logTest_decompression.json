@@ -1,11 +1,11 @@
 {
-    "Compressor": "ZSTD COmpressor",
+    "Compressor": "ZSTD COmpressor:: Decompression Run ",
     "Date": "1/1/2000",
     "Filename": "/home/osboxes/faser-daq/gsoc_data/Faser-Physics-009015-00015.raw",
     "compressorConfig": "compressionLevel:3\n",
     "evdata": [
         {
-            "compressionRatio": "2.037901",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669449",
                 "bc": "1355",
@@ -19,10 +19,10 @@
             },
             "inputSize": "22368",
             "outputSize": "10976",
-            "timeTaken": "250"
+            "timeTaken": "389"
         },
         {
-            "compressionRatio": "2.042211",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669450",
                 "bc": "2436",
@@ -36,10 +36,10 @@
             },
             "inputSize": "22352",
             "outputSize": "10945",
-            "timeTaken": "156"
+            "timeTaken": "195"
         },
         {
-            "compressionRatio": "2.053042",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669451",
                 "bc": "53",
@@ -53,10 +53,10 @@
             },
             "inputSize": "22372",
             "outputSize": "10897",
-            "timeTaken": "246"
+            "timeTaken": "193"
         },
         {
-            "compressionRatio": "2.028292",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669452",
                 "bc": "2354",
@@ -70,10 +70,10 @@
             },
             "inputSize": "22368",
             "outputSize": "11028",
-            "timeTaken": "208"
+            "timeTaken": "315"
         },
         {
-            "compressionRatio": "2.047815",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669453",
                 "bc": "2680",
@@ -87,10 +87,10 @@
             },
             "inputSize": "22356",
             "outputSize": "10917",
-            "timeTaken": "151"
+            "timeTaken": "81"
         },
         {
-            "compressionRatio": "2.019137",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669454",
                 "bc": "1578",
@@ -104,10 +104,10 @@
             },
             "inputSize": "22368",
             "outputSize": "11078",
-            "timeTaken": "143"
+            "timeTaken": "207"
         },
         {
-            "compressionRatio": "2.070562",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669455",
                 "bc": "3183",
@@ -121,10 +121,10 @@
             },
             "inputSize": "22360",
             "outputSize": "10799",
-            "timeTaken": "182"
+            "timeTaken": "194"
         },
         {
-            "compressionRatio": "2.056859",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669456",
                 "bc": "2110",
@@ -138,10 +138,10 @@
             },
             "inputSize": "22356",
             "outputSize": "10869",
-            "timeTaken": "164"
+            "timeTaken": "192"
         },
         {
-            "compressionRatio": "2.061947",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669457",
                 "bc": "3233",
@@ -155,10 +155,10 @@
             },
             "inputSize": "22368",
             "outputSize": "10848",
-            "timeTaken": "153"
+            "timeTaken": "255"
         },
         {
-            "compressionRatio": "2.027184",
+            "compressionRatio": "2.000000",
             "eventHeader": {
                 "Event": "669458",
                 "bc": "1354",
@@ -172,7 +172,7 @@
             },
             "inputSize": "22372",
             "outputSize": "11036",
-            "timeTaken": "162"
+            "timeTaken": "189"
         }
     ],
     "eventCount": 10

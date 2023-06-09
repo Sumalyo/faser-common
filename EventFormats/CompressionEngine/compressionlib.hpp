@@ -59,7 +59,9 @@ typedef std::map<std::string, std::string> configMap;
 class EventCompressor {
 public:
     compressionUtilityLog logstruct;
+    compressionUtilityLog logstructDecompress;
     bool __isLogging;
+    bool __isDecompressing;
     std::map<std:: string,std::string> CompressorConfig;
     // virtual ~EventCompressor() {} TODO To be implemneted 
     std::string mapToString(const configMap& myMap);
@@ -67,10 +69,13 @@ public:
     virtual bool setupCompression() = 0;
     virtual bool setupCompressionAndLogging(std::string Filename, std::string date) = 0;
     virtual bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) = 0;
+    virtual bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputevent) = 0;
     virtual void closeCompressor() = 0;
     void initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config);
+    void supportDecompression();
     void addEventData(EventData evData);
-    void displayCompressionUtilityLog();
+    void addEventDataDecompressed(EventData evData);
+    //void displayCompressionUtilityLog();
     void writeToJson(std::string filename);
 };
 class ZstdCompressor: public EventCompressor {
@@ -84,6 +89,7 @@ public:
     bool setupCompression();
     bool setupCompressionAndLogging(std::string Filename, std::string date);
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
+    bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
     void closeCompressor();
 };
 }

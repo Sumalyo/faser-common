@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
   CompressionUtility::ZstdCompressor zstdComp;
   zstdComp.configCompression(zstdConfig);
   zstdComp.setupCompressionAndLogging(filename,"1/1/2000"); // TODO insert system Date for Run
+  zstdComp.supportDecompression();
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
@@ -147,12 +148,25 @@ int main(int argc, char **argv) {
       std::vector<uint8_t> compressedData;
       //zstdComp.Compressevent(event,compressedData);
       //CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
-    if (zstdComp.Compressevent(event,compressedData)) {
+    if (zstdComp.Compressevent(event,compressedData))
+       {
         std::cout << "Compression successful" << std::endl;
         //event.updateStatus(1<<11);
-    } else {
+        } 
+        else 
+        {
         std::cerr << "Compression failed" << std::endl;
-    }
+        }
+      std::vector<uint8_t> decompressedData;
+        if (zstdComp.deCompressevent(event,compressedData,decompressedData))
+        {
+        std::cout << "Decompression successful" << std::endl;
+        //event.updateStatus(1<<11);
+        } 
+        else 
+        {
+        std::cerr << "Decompression failed" << std::endl;
+        }
 
 
       std::cout<<event<<std::endl;
