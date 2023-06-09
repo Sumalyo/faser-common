@@ -1,16 +1,25 @@
 {
-    "FileName":"",
-    "Date":"",
-    "Compressor":"",
-    "Compressor Config":"",
-    "No of Events":10,
-    "EventData":[{
-        "Event Header":{
-            "Header Field":"Header Value"
-        },
-        "Input size":"",
-        "Output Size":"",
-        "Compression Ratio":"",
-        "Time for Compression":""
-    }]
+    "Date": "<Run Date>",
+    "Filename": "<Name_of_file>",
+    "evdata": [
+        {
+            "compressionRatio": "2.037900",
+            "eventHeader": {
+                "Event": "..",
+                "bc": "..",
+                "fragmentCount": 14,
+                "payloadSize": 22368,
+                "run": "..",
+                "status": "..",
+                "tag": "..",
+                "time": "..",
+                "trig": ".."
+            },
+            "inputSize": "22368",
+            "outputSize": "10976",
+            "timeForCompression": ".."
+        }
+
+    ],
+    "eventCount": "<No_of_Events>"
 }
