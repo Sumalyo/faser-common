@@ -1,7 +1,7 @@
 /*
 FIXME :: There are quite a lot of warnings that come up here. Not strictly adhering to FASER DAQ coding standards. Please review and fix.
 TODO :: Currently using std error. Try and use FASER Exception format
-        Add logging capability for metrics
+        Add logging capability for metrics - Done
 */
 # include "compressionlib.hpp"
 
@@ -393,9 +393,8 @@ Insert Support for zlibcompression
         }
         return true;
     }
-    void ZstdCompressor::closeCompressor()
-    {
-        INFO("Zstd Compressor is gracefully closed");
+
+    ZstdCompressor::~ZstdCompressor(){
         ZSTD_freeCCtx(ctx);
     }
 // };

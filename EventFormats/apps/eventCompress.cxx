@@ -263,7 +263,6 @@ int main(int argc, char **argv) {
     }
     
   }
-  zstdComp->closeCompressor();
   if(zstdComp->__isLogging)
   {
     zstdComp->writeToJson("logTest");
@@ -272,4 +271,5 @@ int main(int argc, char **argv) {
   {
     INFO("Logging was not setup for compressor hence no JSON log created");
   }
+  delete zstdComp;
 }

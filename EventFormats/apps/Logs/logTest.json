@@ -19,7 +19,7 @@
             },
             "inputSize": "22368",
             "outputSize": "10976",
-            "timeTaken": "285"
+            "timeTaken": "241"
         },
         {
             "compressionRatio": "2.042211",
@@ -36,7 +36,7 @@
             },
             "inputSize": "22352",
             "outputSize": "10945",
-            "timeTaken": "172"
+            "timeTaken": "150"
         },
         {
             "compressionRatio": "2.053042",
@@ -53,7 +53,7 @@
             },
             "inputSize": "22372",
             "outputSize": "10897",
-            "timeTaken": "243"
+            "timeTaken": "231"
         },
         {
             "compressionRatio": "2.028292",
@@ -70,7 +70,7 @@
             },
             "inputSize": "22368",
             "outputSize": "11028",
-            "timeTaken": "193"
+            "timeTaken": "134"
         },
         {
             "compressionRatio": "2.047815",
@@ -87,7 +87,7 @@
             },
             "inputSize": "22356",
             "outputSize": "10917",
-            "timeTaken": "143"
+            "timeTaken": "140"
         },
         {
             "compressionRatio": "2.019137",
@@ -104,7 +104,7 @@
             },
             "inputSize": "22368",
             "outputSize": "11078",
-            "timeTaken": "192"
+            "timeTaken": "133"
         },
         {
             "compressionRatio": "2.070562",
@@ -121,7 +121,7 @@
             },
             "inputSize": "22360",
             "outputSize": "10799",
-            "timeTaken": "138"
+            "timeTaken": "131"
         },
         {
             "compressionRatio": "2.056859",
@@ -138,7 +138,7 @@
             },
             "inputSize": "22356",
             "outputSize": "10869",
-            "timeTaken": "138"
+            "timeTaken": "131"
         },
         {
             "compressionRatio": "2.061947",
@@ -155,7 +155,7 @@
             },
             "inputSize": "22368",
             "outputSize": "10848",
-            "timeTaken": "149"
+            "timeTaken": "144"
         },
         {
             "compressionRatio": "2.027184",
@@ -172,7 +172,7 @@
             },
             "inputSize": "22372",
             "outputSize": "11036",
-            "timeTaken": "145"
+            "timeTaken": "139"
         }
     ],
     "eventCount": 10

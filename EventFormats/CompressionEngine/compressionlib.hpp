@@ -63,14 +63,15 @@ public:
     bool __isLogging;
     bool __isDecompressing;
     std::map<std:: string,std::string> CompressorConfig;
-    // virtual ~EventCompressor() {} TODO To be implemneted 
+    virtual ~EventCompressor() {} // TODO To be reviewed
+    // std::string __stateTracker ? TODO For state tracking and safety 
     std::string mapToString(const configMap& myMap);
     virtual void configCompression(configMap& config) = 0;
     virtual bool setupCompression() = 0;
     virtual bool setupCompressionAndLogging(std::string Filename, std::string date) = 0;
     virtual bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) = 0;
     virtual bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputevent) = 0;
-    virtual void closeCompressor() = 0;
+    //virtual void closeCompressor() = 0;
     void initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config);
     void supportDecompression();
     void addEventData(EventData evData);
@@ -90,7 +91,8 @@ public:
     bool setupCompressionAndLogging(std::string Filename, std::string date);
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
-    void closeCompressor();
+    // void closeCompressor(); // Probably can be merged with destructor
+    ~ZstdCompressor();
 };
 }
 #endif
