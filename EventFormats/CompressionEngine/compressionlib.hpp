@@ -47,15 +47,8 @@ typedef struct compressionUtilityLog
 
 }compressionUtilityLog;
 namespace CompressionUtility{
-//bool compressFile(const std::string& inputFilename, const std::string& outputFilename,int mode);
-double sizeByteMetric(const std::string& filename);
-//bool compressString(const std::string& inputString,const std::string& outputFilename, int mode);
-//bool zstdCompressor(std::ifstream& ifs,std::ofstream& ofs);
-//bool zstdCompressorString(const std::string& input,const std::string& outputFilename);
-bool zstdCompressorEvent(const std::vector<uint8_t>* inputevent, std::vector<uint8_t>& outputevent,bool reporting);
-bool zstdCompressorEventDAQ(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
-//void showHelp(std::string progname);
 typedef std::map<std::string, std::string> configMap;
+configMap readJsonToMap(const std::string& filename);
 class EventCompressor {
 public:
     compressionUtilityLog logstruct;
@@ -68,15 +61,13 @@ public:
     std::string mapToString(const configMap& myMap);
     virtual void configCompression(configMap& config) = 0;
     virtual bool setupCompression() = 0;
-    virtual bool setupCompressionAndLogging(std::string Filename, std::string date) = 0;
+    virtual bool setupCompressionAndLogging(std::string Filename) = 0;
     virtual bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) = 0;
     virtual bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputevent) = 0;
-    //virtual void closeCompressor() = 0;
-    void initializeStruct(std::string Filename,std::string date,std::string Compressor,std::string config);
+    void initializeStruct(std::string Filename,std::string Compressor,std::string config);
     void supportDecompression();
     void addEventData(EventData evData);
     void addEventDataDecompressed(EventData evData);
-    //void displayCompressionUtilityLog();
     void writeToJson(std::string filename);
 };
 class ZstdCompressor: public EventCompressor {
@@ -88,10 +79,9 @@ public:
     };
     void configCompression(configMap& config);
     bool setupCompression();
-    bool setupCompressionAndLogging(std::string Filename, std::string date);
+    bool setupCompressionAndLogging(std::string Filename);
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
-    // void closeCompressor(); // Probably can be merged with destructor
     ~ZstdCompressor();
 };
 }

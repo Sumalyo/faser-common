@@ -30,6 +30,6 @@ TEST_F(MyClassTest, CanAddTwoNumbers) {
   EXPECT_EQ(expected, actual);
     std::vector<uint8_t> testInput= {1,2,3,4,5};
     std::vector<uint8_t> testOutput;
-    bool reality = CompressionUtility::zstdCompressorEvent(&testInput,testOutput,true);
+    bool reality = false;
     EXPECT_EQ(reality, true);
     }

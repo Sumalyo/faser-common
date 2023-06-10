@@ -124,36 +124,29 @@ int main(int argc, char **argv) {
   
   // The file input
   int nEventsRead=0;
-  CompressionUtility::configMap zstdConfig = {
-    {"compressionLevel","3"} 
-  }; // TODO Read this from a config JSON
-
-  // CompressionUtility::ZstdCompressor zstdComp;
-  // zstdComp.configCompression(zstdConfig);
-  // zstdComp.setupCompressionAndLogging(filename,"1/1/2000"); // TODO insert system Date for Run
-  // zstdComp.supportDecompression();
-  CompressionUtility::EventCompressor* zstdComp = new CompressionUtility::ZstdCompressor();
-  zstdComp->configCompression(zstdConfig);
-  zstdComp->setupCompressionAndLogging(filename,"1/1/2000");
-  zstdComp->supportDecompression();
+  CompressionUtility::configMap zstdConfig = CompressionUtility::readJsonToMap("/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/compressionConfig.json");
+  CompressionUtility::EventCompressor* usedCompressor;
+  std::string compressor = zstdConfig["Compressor"];
+  if(compressor=="ZSTD")
+  {
+  usedCompressor = new CompressionUtility::ZstdCompressor();
+  }
+  usedCompressor->configCompression(zstdConfig);
+  usedCompressor->setupCompressionAndLogging(filename);
+  usedCompressor->supportDecompression();
   while(in.good() and in.peek()!=EOF) {
     try {
       EventFull event(in);
       /*
-      The target workflow would be:
+      * The target workflow would be:
       - Extract the event fragments from the Event aand compress it using the compression utility
       - Update the Compression Flag in Event Status
-      - Replace the event fragments with the new compressed fragment (and update the payload size at header appropriately)
-      - Write the compressed event out to a new file
+        TODO:: Replace the event fragments with the new compressed fragment (and update the payload size at header appropriately) 
+        TODO:: Write the compressed event out to a new file
       - Record all relevant metrices Investigation and analysis
       */
-      //std::vector<uint8_t>* x = event.raw_fragments();
-
-
       std::vector<uint8_t> compressedData;
-      //zstdComp.Compressevent(event,compressedData);
-      //CompressionUtility::zstdCompressorEventDAQ(event,compressedData);
-    if (zstdComp->Compressevent(event,compressedData))
+    if (usedCompressor->Compressevent(event,compressedData))
        {
         std::cout << "Compression successful" << std::endl;
         //event.updateStatus(1<<11);
@@ -163,10 +156,9 @@ int main(int argc, char **argv) {
         std::cerr << "Compression failed" << std::endl;
         }
       std::vector<uint8_t> decompressedData;
-        if (zstdComp->deCompressevent(event,compressedData,decompressedData))
+        if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
         {
         std::cout << "Decompression successful" << std::endl;
-        //event.updateStatus(1<<11);
         } 
         else 
         {
@@ -263,13 +255,13 @@ int main(int argc, char **argv) {
     }
     
   }
-  if(zstdComp->__isLogging)
+  if(usedCompressor->__isLogging)
   {
-    zstdComp->writeToJson("logTest");
+    usedCompressor->writeToJson("logTest");
   }
   else
   {
     INFO("Logging was not setup for compressor hence no JSON log created");
   }
-  delete zstdComp;
+  delete usedCompressor;
 }

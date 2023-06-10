@@ -254,6 +254,13 @@ namespace DAQFormats {
     void updateStatus(uint16_t status) {
       header.status|=status;
     }
+    void updatePayloadSize(uint32_t size){
+      header.payload_size=size;
+    }
+    void toggleCompression()
+    {
+      header.status^=1<<11;
+    }
 
     /// Return full event as vector of bytes
     byteVector* raw() {
@@ -287,14 +294,14 @@ namespace DAQFormats {
     int16_t addFragment(const EventFragment* fragment) { // FIXME: should use smarter pointers for memory management
       int16_t status=0;
       if (fragments.find(fragment->source_id())!=fragments.end()) 
-	THROW(EFormatException,"Duplicate fragment addition!");
+	    THROW(EFormatException,"Duplicate fragment addition!");
       fragments[fragment->source_id()]=fragment;
       if (!header.fragment_count) {
-	header.bc_id=fragment->bc_id();
-	header.event_id = fragment->event_id();
+          header.bc_id=fragment->bc_id();
+          header.event_id = fragment->event_id();
       }
       header.fragment_count++;
-      header.trigger_bits |= fragment->trigger_bits(); //should only come from trigger fragment - BP: add check?
+      header.trigger_bits |= fragment->trigger_bits(); //? should only come from trigger fragment - BP: add check?
       header.payload_size+=fragment->size();
       if (header.bc_id!=fragment->bc_id()) {
 	status |= EventStatus::BCIDMismatch;
