@@ -124,12 +124,15 @@ int main(int argc, char **argv) {
   
   // The file input
   int nEventsRead=0;
-  CompressionUtility::configMap zstdConfig = CompressionUtility::readJsonToMap("/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/compressionConfig.json");
+  CompressionUtility::configMap zstdConfig = CompressionUtility::readJsonToMap("../EventFormats/CompressionEngine/compressionConfig.json");
   CompressionUtility::EventCompressor* usedCompressor;
   std::string compressor = zstdConfig["Compressor"];
   if(compressor=="ZSTD")
   {
   usedCompressor = new CompressionUtility::ZstdCompressor();
+  }else if(compressor=="Zlib")
+  {
+    usedCompressor = new CompressionUtility::ZlibCompressor();
   }
   usedCompressor->configCompression(zstdConfig);
   usedCompressor->setupCompressionAndLogging(filename);
@@ -246,6 +249,10 @@ int main(int argc, char **argv) {
       std::cout<<"Problem while reading file - "<<e.what()<<std::endl;
       return 1;
     }
+    catch(...)
+    {
+      std::cout<<"An exception occurred"<<std::endl;
+    }
     
     // read up to nEventsMax if specified
     nEventsRead++;
@@ -257,7 +264,7 @@ int main(int argc, char **argv) {
   }
   if(usedCompressor->__isLogging)
   {
-    usedCompressor->writeToJson("logTest");
+    usedCompressor->writeToJson("logTest"+CompressionUtility::generateUniqueIdentifier());
   }
   else
   {

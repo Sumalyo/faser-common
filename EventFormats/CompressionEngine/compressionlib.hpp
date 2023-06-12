@@ -8,6 +8,7 @@
 #include <chrono>
 #include <zstd.h>
 #include <vector>
+#include <random>
 #include <filesystem>
 #include "Exceptions/Exceptions.hpp"
 #include "Logging.hpp"
@@ -49,6 +50,7 @@ typedef struct compressionUtilityLog
 namespace CompressionUtility{
 typedef std::map<std::string, std::string> configMap;
 configMap readJsonToMap(const std::string& filename);
+std::string generateUniqueIdentifier();
 class EventCompressor {
 public:
     compressionUtilityLog logstruct;
@@ -64,8 +66,9 @@ public:
     virtual bool setupCompressionAndLogging(std::string Filename) = 0;
     virtual bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) = 0;
     virtual bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputevent) = 0;
+    virtual void supportDecompression() = 0;
     void initializeStruct(std::string Filename,std::string Compressor,std::string config);
-    void supportDecompression();
+    
     void addEventData(EventData evData);
     void addEventDataDecompressed(EventData evData);
     void writeToJson(std::string filename);
@@ -79,10 +82,32 @@ public:
     };
     void configCompression(configMap& config);
     bool setupCompression();
+    void supportDecompression();
     bool setupCompressionAndLogging(std::string Filename);
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
     ~ZstdCompressor();
+};
+class ZlibCompressor: public EventCompressor {
+public:
+    //ZSTD_CCtx* ctx;
+    z_stream stream;
+    z_stream decompressstream;
+    int compressionLevel;
+    int bufferSize; 
+    ZlibCompressor():EventCompressor()
+    {
+        compressionLevel = Z_DEFAULT_COMPRESSION;
+        bufferSize = 1024 * 1024;
+    //z_stream stream;
+    };
+    void configCompression(configMap& config);
+    bool setupCompression();
+    void supportDecompression();
+    bool setupCompressionAndLogging(std::string Filename);
+    bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
+    bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
+    ~ZlibCompressor();
 };
 }
 #endif
