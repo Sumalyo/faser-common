@@ -94,11 +94,11 @@ public:
     z_stream stream;
     z_stream decompressstream;
     int compressionLevel;
-    int bufferSize; 
+    // int bufferSize; 
     ZlibCompressor():EventCompressor()
     {
         compressionLevel = Z_DEFAULT_COMPRESSION;
-        bufferSize = 1024 * 1024;
+        //bufferSize = 1024 * 1024;
     //z_stream stream;
     };
     void configCompression(configMap& config);

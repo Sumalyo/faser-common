@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
         std::cerr << "Compression failed" << std::endl;
         }
       std::vector<uint8_t> decompressedData;
+      if(usedCompressor->__isDecompressing){
         if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
         {
         std::cout << "Decompression successful" << std::endl;
@@ -167,7 +168,7 @@ int main(int argc, char **argv) {
         {
         std::cerr << "Decompression failed" << std::endl;
         }
-
+      }
 
       std::cout<<event<<std::endl;
       if (showFragments) {

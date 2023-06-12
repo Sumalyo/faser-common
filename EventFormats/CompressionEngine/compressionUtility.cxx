@@ -387,13 +387,9 @@ bool ZlibCompressor::setupCompression()
     {
         std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
         this->compressionLevel = std::stoi(valueOfKey1);
-        std::string valueofKey2 = this->CompressorConfig["bufferSize"];
-        this->bufferSize = std::stoi(valueofKey2);
-        if (deflateInit(&stream, this->compressionLevel) != Z_OK)
-        {
-        std::cerr << "Error: zlib Stream Init Failed" << std::endl;
-        return false;
-        }
+        stream.zalloc = Z_NULL;
+        stream.zfree = Z_NULL;
+        stream.opaque = Z_NULL;
         
     }
     catch(const std::exception& e)
@@ -408,10 +404,9 @@ bool ZlibCompressor::setupCompression()
 void ZlibCompressor::supportDecompression()
 {
     this->__isDecompressing=true;
-    std::memset(&decompressstream, 0, sizeof(decompressstream));
-    if (inflateInit(&decompressstream) != Z_OK) {
-        std::cerr << "Error: zlib initialization failed" << std::endl;
-    }
+    decompressstream.zalloc = Z_NULL;
+    decompressstream.zfree = Z_NULL;
+    decompressstream.opaque = Z_NULL;
 }
 bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     
@@ -425,7 +420,7 @@ bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     }
     return isSetup;
 }
-bool ZlibCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) {
+bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) {
     /*
     Steps TO DO
     - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
@@ -435,36 +430,33 @@ bool ZlibCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     ToDo Add dictionary based compression support
     */
    
-    
-    std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
     auto start = std::chrono::high_resolution_clock::now();
-    stream.next_in = const_cast<Bytef*>(eventFragments->data());
-    stream.avail_in = static_cast<uInt>(eventFragments->size());
-    std::vector<uint8_t> buffer(bufferSize);
-    int result;
-    size_t compressedSize;
-    while (stream.avail_in > 0) {
-        // Set output buffer
-        stream.next_out = buffer.data();
-        stream.avail_out = static_cast<uInt>(bufferSize);
+    std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+    const uint8_t* input = eventFragments->data();
+    size_t inputSize = eventFragments->size();
+    uLongf compressedSize = compressBound(inputSize);
+    outputevent.resize(compressedSize);
+    stream.avail_in = inputSize;
+    stream.next_in = const_cast<Bytef*>(input);
+    stream.avail_out = compressedSize;
+    stream.next_out = outputevent.data();
 
-        // Compress
-        int result = deflate(&stream, Z_FINISH);
-        if (result != Z_STREAM_END && result != Z_OK) {
-            std::cerr << "Error: zlib compression failed: " << stream.msg << std::endl;
-            deflateEnd(&stream);
-            return false;
-        }
-
-        // Append compressed data to the output vector
-        compressedSize = bufferSize - stream.avail_out;
-        outputevent.insert(outputevent.end(), buffer.begin(), buffer.begin() + compressedSize);
-    }
-    if ( result!= Z_STREAM_END) // checking for errors
+    // Initialize the compression
+    if (deflateInit(&stream, compressionLevel) != Z_OK)
     {
-        std::cerr<<"False positive error"<<std::endl;
+        std::cerr << "Compression initialization failed." << std::endl;
         return false;
     }
+    // Compress the data
+    if (deflate(&stream, Z_FINISH) != Z_STREAM_END)
+    {
+        deflateEnd(&stream);
+        std::cerr << "Compression failed." << std::endl;
+        return false;
+    }
+    outputevent.resize(stream.total_out);
+    
+    
     //const size_t compressedSize = 0;
     inputEvent.toggleCompression();
     inputEvent.updatePayloadSize(compressedSize);
@@ -495,30 +487,39 @@ bool ZlibCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
 
 bool ZlibCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
 {
-    std::vector<uint8_t> buffer(bufferSize);
-    decompressstream.next_in = const_cast<Bytef*>(compressedFragments.data());
-    decompressstream.avail_in = static_cast<uInt>(compressedFragments.size());
-    size_t decompressedSize;
+    //
     auto start = std::chrono::high_resolution_clock::now();
-    while (true) {
-        // Set output buffer
-        decompressstream.next_out = buffer.data();
-        decompressstream.avail_out = static_cast<uInt>(bufferSize);
+    const uint8_t* input = compressedFragments.data();
+    size_t inputSize = compressedFragments.size();
+    uLongf decompressedSize = 0;
+    decompressstream.avail_in = inputSize;
+    decompressstream.next_in = const_cast<Bytef*>(input);
+    if (inflateInit(&decompressstream) != Z_OK)
+    {
+        std::cerr << "Decompression initialization failed." << std::endl;
+        return false;
+    }
+    int result = -1;
+    // Decompress the data
+    do {
+        // Determine the size of the output buffer needed
+        decompressedSize += 1024; // Increase buffer size as needed
+        outputFragments.resize(decompressedSize);
 
-        // Decompress
-        const int result = inflate(&decompressstream, Z_NO_FLUSH);
-        if (result == Z_STREAM_END)
-            break;
-        else if (result != Z_OK) {
-            std::cerr << "Error: zlib decompression failed: " << decompressstream.msg << std::endl;
+        decompressstream.avail_out = decompressedSize - decompressstream.total_out;
+        decompressstream.next_out = outputFragments.data() + decompressstream.total_out;
+
+        result = inflate(&decompressstream, Z_NO_FLUSH);
+
+        if (result == Z_STREAM_ERROR)
+        {
             inflateEnd(&decompressstream);
+            std::cerr << "Decompression failed." << std::endl;
             return false;
         }
 
-        // Append decompressed data to the output vector
-        size_t decompressedSize = bufferSize - decompressstream.avail_out;
-        outputFragments.insert(outputFragments.end(), buffer.begin(), buffer.begin() + decompressedSize);
-    }
+    } while (result != Z_STREAM_END);
+    outputFragments.resize(stream.total_out);
     inputEvent.toggleCompression();
     inputEvent.updatePayloadSize(decompressedSize);
 
@@ -542,6 +543,7 @@ bool ZlibCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
         evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
         this->addEventDataDecompressed(evData);
     }
+
 
     return true;
 }
