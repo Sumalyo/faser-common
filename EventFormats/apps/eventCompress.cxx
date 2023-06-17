@@ -175,6 +175,7 @@ int main(int argc, char **argv) {
       std::vector<uint8_t> decompressedData;
       byteVector* raw = event.raw();
       out.write(reinterpret_cast<char*>(&(*raw)[0]), event.size());
+      DEBUG("ALL GOOD")
       if(usedCompressor->__isDecompressing){
         //if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
         if (usedCompressor->deCompressevent(event,event.compressedData,decompressedData))

@@ -1,4 +1,4 @@
 {
-    "Compressor":"ZSTD",
+    "Compressor":"Zlib",
     "compressionLevel":"5"
 }

@@ -406,9 +406,8 @@ bool ZlibCompressor::setupCompression()
     {
         std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
         this->compressionLevel = std::stoi(valueOfKey1);
-        stream.zalloc = Z_NULL;
-        stream.zfree = Z_NULL;
-        stream.opaque = Z_NULL;
+        z_stream stream;
+        memset(&stream, 0, sizeof(stream));
         
     }
     catch(const std::exception& e)
@@ -422,15 +421,15 @@ bool ZlibCompressor::setupCompression()
 }
 void ZlibCompressor::supportDecompression()
 {
-    this->__isDecompressing=true;
-    decompressstream.zalloc = Z_NULL;
-    decompressstream.zfree = Z_NULL;
-    decompressstream.opaque = Z_NULL;
+    this->__isDecompressing=false; //FIXME Add support for decompression here
+    // decompressstream.zalloc = Z_NULL;
+    // decompressstream.zfree = Z_NULL;
+    // decompressstream.opaque = Z_NULL;
 }
 bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     
     std::string config = this->mapToString(this->CompressorConfig);
-    this->initializeStruct(Filename,"Zlib COmpressor",config);
+    this->initializeStruct(Filename,"Zlib Compressor",config);
     bool isSetup = this->setupCompression();
     if(isSetup)
     {
@@ -439,7 +438,7 @@ bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     }
     return isSetup;
 }
-bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) {
+bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
     /*
     Steps TO DO
     - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
@@ -451,34 +450,31 @@ bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vect
    
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
-    const uint8_t* input = eventFragments->data();
-    size_t inputSize = eventFragments->size();
-    uLongf compressedSize = compressBound(inputSize);
-    outputevent.resize(compressedSize);
-    stream.avail_in = inputSize;
-    stream.next_in = const_cast<Bytef*>(input);
-    stream.avail_out = compressedSize;
-    stream.next_out = outputevent.data();
+    size_t compressedSize = -1;
+    std::vector<uint8_t> outputevent;
+    stream.next_in = eventFragments->data();
+    stream.avail_in = eventFragments->size();
+    if (deflateInit(&stream, this->compressionLevel) != Z_OK)
+        return false;
+    std::vector<uint8_t> compressedBuffer(1024);
+    do {
+        stream.next_out = compressedBuffer.data();
+        stream.avail_out = compressedBuffer.size();
+        int result = deflate(&stream, Z_FINISH);
 
-    // Initialize the compression
-    if (deflateInit(&stream, compressionLevel) != Z_OK)
-    {
-        std::cerr << "Compression initialization failed." << std::endl;
-        return false;
-    }
-    // Compress the data
-    if (deflate(&stream, Z_FINISH) != Z_STREAM_END)
-    {
-        deflateEnd(&stream);
-        std::cerr << "Compression failed." << std::endl;
-        return false;
-    }
-    outputevent.resize(stream.total_out);
-    
-    
-    //const size_t compressedSize = 0;
-    inputEvent.toggleCompression();
-    inputEvent.updatePayloadSize(compressedSize);
+        if (result == Z_STREAM_ERROR) {
+            deflateEnd(&stream);
+            return false;
+        }
+        compressedSize = compressedBuffer.size() - stream.avail_out;
+
+        // Append the compressed data to the result vector
+        outputevent.insert(outputevent.end(), compressedBuffer.begin(), compressedBuffer.begin() + compressedSize);
+        outputevent_vector.insert(outputevent_vector.end(), compressedBuffer.begin(), compressedBuffer.begin() + compressedSize);
+    } while (stream.avail_out == 0);
+    inputEvent.loadCompressedData(outputevent);
+    inputEvent.setCompressionAlgo(0x0200); // Internal Code for zlib compression
+    //inputEvent.updatePayloadSize(compressedSize);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     if (this->__isLogging)
@@ -507,69 +503,69 @@ bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vect
 bool ZlibCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
 {
     //
-    auto start = std::chrono::high_resolution_clock::now();
-    const uint8_t* input = compressedFragments.data();
-    size_t inputSize = compressedFragments.size();
-    uLongf decompressedSize = 0;
-    decompressstream.avail_in = inputSize;
-    decompressstream.next_in = const_cast<Bytef*>(input);
-    if (inflateInit(&decompressstream) != Z_OK)
-    {
-        std::cerr << "Decompression initialization failed." << std::endl;
-        return false;
-    }
-    int result = -1;
-    // Decompress the data
-    do {
-        // Determine the size of the output buffer needed
-        decompressedSize += 1024; // Increase buffer size as needed
-        outputFragments.resize(decompressedSize);
+    // auto start = std::chrono::high_resolution_clock::now();
+    // const uint8_t* input = compressedFragments.data();
+    // size_t inputSize = compressedFragments.size();
+    // uLongf decompressedSize = 0;
+    // decompressstream.avail_in = inputSize;
+    // decompressstream.next_in = const_cast<Bytef*>(input);
+    // if (inflateInit(&decompressstream) != Z_OK)
+    // {
+    //     std::cerr << "Decompression initialization failed." << std::endl;
+    //     return false;
+    // }
+    // int result = -1;
+    // // Decompress the data
+    // do {
+    //     // Determine the size of the output buffer needed
+    //     decompressedSize += 1024; // Increase buffer size as needed
+    //     outputFragments.resize(decompressedSize);
 
-        decompressstream.avail_out = decompressedSize - decompressstream.total_out;
-        decompressstream.next_out = outputFragments.data() + decompressstream.total_out;
+    //     decompressstream.avail_out = decompressedSize - decompressstream.total_out;
+    //     decompressstream.next_out = outputFragments.data() + decompressstream.total_out;
 
-        result = inflate(&decompressstream, Z_NO_FLUSH);
+    //     result = inflate(&decompressstream, Z_NO_FLUSH);
 
-        if (result == Z_STREAM_ERROR)
-        {
-            inflateEnd(&decompressstream);
-            std::cerr << "Decompression failed." << std::endl;
-            return false;
-        }
+    //     if (result == Z_STREAM_ERROR)
+    //     {
+    //         inflateEnd(&decompressstream);
+    //         std::cerr << "Decompression failed." << std::endl;
+    //         return false;
+    //     }
 
-    } while (result != Z_STREAM_END);
-    outputFragments.resize(stream.total_out);
-    inputEvent.toggleCompression();
-    inputEvent.updatePayloadSize(decompressedSize);
+    // } while (result != Z_STREAM_END);
+    // outputFragments.resize(stream.total_out);
+    // inputEvent.toggleCompression();
+    // inputEvent.updatePayloadSize(decompressedSize);
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    if (this->__isLogging && this->__isDecompressing)
-    {
-        EventData evData;
-        evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
-        evData.eventHeader.run = std::to_string(inputEvent.run_number());
-        evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
-        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
-        evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
-        evData.eventHeader.fragmentCount = inputEvent.fragment_count();
-        evData.eventHeader.payloadSize = inputEvent.payload_size();
-        evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
-        evData.eventHeader.time = std::to_string(inputEvent.timestamp());
-        evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
-        evData.outputSize =std::to_string(decompressedSize);
-        evData.compressionRatio =std::to_string(static_cast<double>(decompressedSize/compressedFragments.size()));
-        evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
-        this->addEventDataDecompressed(evData);
-    }
+    // auto stop = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    // if (this->__isLogging && this->__isDecompressing)
+    // {
+    //     EventData evData;
+    //     evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+    //     evData.eventHeader.run = std::to_string(inputEvent.run_number());
+    //     evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+    //     evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
+    //     evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+    //     evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+    //     evData.eventHeader.payloadSize = inputEvent.payload_size();
+    //     evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+    //     evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+    //     evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
+    //     evData.outputSize =std::to_string(decompressedSize);
+    //     evData.compressionRatio =std::to_string(static_cast<double>(decompressedSize/compressedFragments.size()));
+    //     evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+    //     this->addEventDataDecompressed(evData);
+    // }
 
 
-    return true;
+    return false;
 }
 
 ZlibCompressor::~ZlibCompressor(){
         deflateEnd(&stream);
-        if (this->__isDecompressing)
-        inflateEnd(&decompressstream);
+        // if (this->__isDecompressing)
+        // inflateEnd(&decompressstream);
     }
 }

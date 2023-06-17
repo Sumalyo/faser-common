@@ -92,7 +92,7 @@ class ZlibCompressor: public EventCompressor {
 public:
     //ZSTD_CCtx* ctx;
     z_stream stream;
-    z_stream decompressstream;
+    //z_stream decompressstream;
     int compressionLevel;
     // int bufferSize; 
     ZlibCompressor():EventCompressor()

@@ -16,6 +16,7 @@
 #include <fstream>
 #include "Exceptions/Exceptions.hpp"
 #include <zstd.h>
+#include <zlib.h> 
 #include "Logging.hpp"
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -399,6 +400,7 @@ namespace DAQFormats {
   {
     uint16_t mask = 0xff00;
     uint16_t zstd_mask = 0x0100;
+    uint16_t zlib_mask = 0x0200;
     if ((header_version_number & mask) == (zstd_mask&mask))
     {
       DEBUG("Detected ZSTD Compression in Event");
@@ -419,6 +421,20 @@ namespace DAQFormats {
 
     outputFragments.resize(decompressedSize);
     return true;
+    }
+    else if ((header_version_number & mask) == (zlib_mask&mask))
+    {
+      DEBUG("Detected Zlib Compression in Event");
+      outputFragments.clear();
+      uLongf decompressedSize = compressedFragments.size() * 3;
+      outputFragments.resize(decompressedSize);
+      int result = uncompress(outputFragments.data(), &decompressedSize, compressedFragments.data(), compressedFragments.size());
+
+      if (result != Z_OK) {
+          return false;
+      }
+      outputFragments.resize(decompressedSize);
+      return true;
     }
     return false;
   }
