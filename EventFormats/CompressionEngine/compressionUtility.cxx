@@ -261,7 +261,7 @@ bool ZstdCompressor::setupCompressionAndLogging(std::string Filename){
     return isSetup;
 }
 
-bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent) {
+bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
     /*
     Steps TO DO
     - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
@@ -272,27 +272,46 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     */
     
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+    std::vector<uint8_t> outputevent;
+
 
 
     const size_t maxOutputSize = ZSTD_compressBound(eventFragments->size());
 
     outputevent.resize(maxOutputSize);
+    outputevent_vector.resize(maxOutputSize);
 
     // Compress the input data and store the compressed data in the output vector
     int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]);
     auto start = std::chrono::high_resolution_clock::now();
-    const size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
+    size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
     if (ZSTD_isError(compressedSize)) {
 
         std::cerr << "Error: zstd compression failed: " << ZSTD_getErrorName(compressedSize) << std::endl;
         return false;
-    } // Compress Event
-    // Resize the output vector to the actual compressed size
-    outputevent.resize(compressedSize); // Compress Event
-    inputEvent.toggleCompression();
-    inputEvent.updatePayloadSize(compressedSize);
+    }
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    
+    outputevent.resize(compressedSize);
+    compressedSize = ZSTD_compressCCtx(ctx, outputevent_vector.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
+    if (ZSTD_isError(compressedSize)) {
+
+        std::cerr << "Error: zstd compression failed: " << ZSTD_getErrorName(compressedSize) << std::endl;
+        return false;
+    }
+     // Compress Event
+    // Resize the output vector to the actual compressed size
+     // Compress Event
+    outputevent_vector.resize(compressedSize);
+    inputEvent.loadCompressedData(outputevent);
+    inputEvent.setCompressionAlgo(0x0100);
+    // Event -> Raw Fragments -> outputevent
+    // 
+    // inputEvent.toggleCompression();
+    //inputEvent.updatePayloadSize(compressedSize);
+    //inputEvent.loadCompressedData(outputevent);
+
     if (this->__isLogging)
     {
         EventData evData;
@@ -315,7 +334,7 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
 
     return true;
     }
-
+//
 bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
 {
     //Todo optimize this if possible using a common decompression context
@@ -337,8 +356,8 @@ bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
     }
 
     outputFragments.resize(decompressedSize);
-    inputEvent.toggleCompression();
-    inputEvent.updatePayloadSize(decompressedSize);
+    //inputEvent.toggleCompression();
+    //inputEvent.updatePayloadSize(decompressedSize);
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -348,10 +367,10 @@ bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
         evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
         evData.eventHeader.run = std::to_string(inputEvent.run_number());
         evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
-        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
+        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()^1<<11)); // dummy for compression
         evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
         evData.eventHeader.fragmentCount = inputEvent.fragment_count();
-        evData.eventHeader.payloadSize = inputEvent.payload_size();
+        evData.eventHeader.payloadSize = decompressedSize; // dummy for logging
         evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
         evData.eventHeader.time = std::to_string(inputEvent.timestamp());
         evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation

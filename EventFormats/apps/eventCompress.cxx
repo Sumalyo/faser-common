@@ -116,12 +116,26 @@ int main(int argc, char **argv) {
 
 
   std::string filename(argv[optind]);
+  //std::string outfilename(filename+"_compressed");
+  std::string outfilename = filename;
+  size_t dotPos = outfilename.find_last_of(".");
+  if (dotPos != std::string::npos) {
+      std::string nameWithoutExtension = outfilename.substr(0, dotPos);
+      outfilename = nameWithoutExtension + "_compressed.raw";
+  }
+  //Todo Add support for user defined filename
   std::ifstream in(filename, std::ios::binary);
   if (!in.is_open()){
     std::cout << "ERROR: can't open file "<<filename<<std::endl;
     return 1;
   }
-  
+  std::ios_base::openmode mode;
+  mode = std::ios::trunc;
+  std::ofstream out(outfilename, std::ios::out | std::ios::binary | mode);
+  if (!out.is_open()){
+    std::cout << "ERROR: can't open file "<<outfilename<<std::endl;
+    return 1;
+  }
   // The file input
   int nEventsRead=0;
   CompressionUtility::configMap zstdConfig = CompressionUtility::readJsonToMap("../EventFormats/CompressionEngine/compressionConfig.json");
@@ -159,8 +173,11 @@ int main(int argc, char **argv) {
         std::cerr << "Compression failed" << std::endl;
         }
       std::vector<uint8_t> decompressedData;
+      byteVector* raw = event.raw();
+      out.write(reinterpret_cast<char*>(&(*raw)[0]), event.size());
       if(usedCompressor->__isDecompressing){
-        if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
+        //if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
+        if (usedCompressor->deCompressevent(event,event.compressedData,decompressedData))
         {
         std::cout << "Decompression successful" << std::endl;
         } 
@@ -261,7 +278,7 @@ int main(int argc, char **argv) {
       std::cout<<"Finished reading specified number of events : "<<nEventsMax<<std::endl;
       break;
     }
-    
+
   }
   if(usedCompressor->__isLogging)
   {
