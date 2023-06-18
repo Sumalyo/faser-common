@@ -1,4 +1,5 @@
 {
     "Compressor":"Zlib",
-    "compressionLevel":"5"
+    "compressionLevel":"3",
+    "bufferSize":"1024"
 }
