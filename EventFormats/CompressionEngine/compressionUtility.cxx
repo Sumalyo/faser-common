@@ -542,6 +542,7 @@ bool ZlibCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
 
 ZlibCompressor::~ZlibCompressor(){
         deflateEnd(&stream);
+        //delete &stream;
         // if (this->__isDecompressing)
         // inflateEnd(&decompressstream);
     }

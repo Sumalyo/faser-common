@@ -175,7 +175,6 @@ int main(int argc, char **argv) {
       std::vector<uint8_t> decompressedData;
       byteVector* raw = event.raw();
       out.write(reinterpret_cast<char*>(&(*raw)[0]), event.size());
-      DEBUG("ALL GOOD")
       if(usedCompressor->__isDecompressing){
         //if (usedCompressor->deCompressevent(event,compressedData,decompressedData))
         if (usedCompressor->deCompressevent(event,event.compressedData,decompressedData))
@@ -264,6 +263,8 @@ int main(int argc, char **argv) {
           }
         }	
       }
+    decompressedData.clear();
+    raw->clear();
     } catch (EFormatException &e) {
       std::cout<<"Problem while reading file - "<<e.what()<<std::endl;
       return 1;
@@ -272,6 +273,7 @@ int main(int argc, char **argv) {
     {
       std::cout<<"An exception occurred"<<std::endl;
     }
+    
     
     // read up to nEventsMax if specified
     nEventsRead++;
