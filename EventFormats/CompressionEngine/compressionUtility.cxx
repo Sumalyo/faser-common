@@ -251,7 +251,7 @@ void ZstdCompressor::supportDecompression()
 bool ZstdCompressor::setupCompressionAndLogging(std::string Filename){
     
     std::string config = this->mapToString(this->CompressorConfig);
-    this->initializeStruct(Filename,"ZSTD COmpressor",config);
+    this->initializeStruct(Filename,"ZSTD Compressor",config);
     bool isSetup = this->setupCompression();
     if(isSetup)
     {
