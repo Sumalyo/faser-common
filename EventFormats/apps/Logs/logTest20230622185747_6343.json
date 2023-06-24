@@ -1,0 +1,179 @@
+{
+    "Compressor": "ZSTD Compressor",
+    "Date": "22/06/2023",
+    "Filename": "/home/osboxes/faser-daq/gsoc_data/Faser-Physics-009015-00016.raw",
+    "compressorConfig": "Compressor:ZSTD\ncompressionLevel:5\n",
+    "evdata": [
+        {
+            "compressionRatio": "2.205958",
+            "eventHeader": {
+                "Event": "714079",
+                "bc": "1134",
+                "fragmentCount": 14,
+                "payloadSize": 10138,
+                "run": "9015",
+                "status": "2048",
+                "tag": "0",
+                "time": "1667884486165557",
+                "trig": "16"
+            },
+            "inputSize": "22364",
+            "outputSize": "10138",
+            "timeTaken": "2705"
+        },
+        {
+            "compressionRatio": "2.183948",
+            "eventHeader": {
+                "Event": "714080",
+                "bc": "1719",
+                "fragmentCount": 14,
+                "payloadSize": 10242,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486173777",
+                "trig": "4"
+            },
+            "inputSize": "22368",
+            "outputSize": "10242",
+            "timeTaken": "314"
+        },
+        {
+            "compressionRatio": "2.226340",
+            "eventHeader": {
+                "Event": "714081",
+                "bc": "1184",
+                "fragmentCount": 14,
+                "payloadSize": 10038,
+                "run": "9015",
+                "status": "2048",
+                "tag": "0",
+                "time": "1667884486195719",
+                "trig": "4"
+            },
+            "inputSize": "22348",
+            "outputSize": "10038",
+            "timeTaken": "216"
+        },
+        {
+            "compressionRatio": "2.213600",
+            "eventHeader": {
+                "Event": "714082",
+                "bc": "2432",
+                "fragmentCount": 14,
+                "payloadSize": 10103,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486199146",
+                "trig": "4"
+            },
+            "inputSize": "22364",
+            "outputSize": "10103",
+            "timeTaken": "205"
+        },
+        {
+            "compressionRatio": "2.180152",
+            "eventHeader": {
+                "Event": "714083",
+                "bc": "1643",
+                "fragmentCount": 14,
+                "payloadSize": 10258,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486226789",
+                "trig": "4"
+            },
+            "inputSize": "22364",
+            "outputSize": "10258",
+            "timeTaken": "223"
+        },
+        {
+            "compressionRatio": "2.211411",
+            "eventHeader": {
+                "Event": "714084",
+                "bc": "111",
+                "fragmentCount": 14,
+                "payloadSize": 10113,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486257597",
+                "trig": "4"
+            },
+            "inputSize": "22364",
+            "outputSize": "10113",
+            "timeTaken": "295"
+        },
+        {
+            "compressionRatio": "2.176791",
+            "eventHeader": {
+                "Event": "714085",
+                "bc": "2594",
+                "fragmentCount": 14,
+                "payloadSize": 10272,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486579833",
+                "trig": "4"
+            },
+            "inputSize": "22360",
+            "outputSize": "10272",
+            "timeTaken": "215"
+        },
+        {
+            "compressionRatio": "2.183735",
+            "eventHeader": {
+                "Event": "714086",
+                "bc": "1687",
+                "fragmentCount": 14,
+                "payloadSize": 10243,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486590277",
+                "trig": "4"
+            },
+            "inputSize": "22368",
+            "outputSize": "10243",
+            "timeTaken": "261"
+        },
+        {
+            "compressionRatio": "2.213162",
+            "eventHeader": {
+                "Event": "714087",
+                "bc": "3068",
+                "fragmentCount": 14,
+                "payloadSize": 10105,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486625490",
+                "trig": "2"
+            },
+            "inputSize": "22364",
+            "outputSize": "10105",
+            "timeTaken": "275"
+        },
+        {
+            "compressionRatio": "2.205781",
+            "eventHeader": {
+                "Event": "714088",
+                "bc": "3139",
+                "fragmentCount": 14,
+                "payloadSize": 10137,
+                "run": "9015",
+                "status": "2050",
+                "tag": "0",
+                "time": "1667884486632541",
+                "trig": "4"
+            },
+            "inputSize": "22360",
+            "outputSize": "10137",
+            "timeTaken": "283"
+        }
+    ],
+    "eventCount": 10
+}
