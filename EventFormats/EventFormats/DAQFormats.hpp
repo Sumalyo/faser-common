@@ -204,6 +204,7 @@ namespace DAQFormats {
       header.event_tag      = event_tag;
       header.trigger_bits   = 0;
       header.version_number = EventVersionLatest;
+      header.compressionCode = 0x00;
       header.header_size    = sizeof(struct EventHeader);
       header.payload_size   = 0;
       header.fragment_count = 0;
@@ -233,7 +234,7 @@ namespace DAQFormats {
         this->compressedData.insert(this->compressedData.begin(),data,data+dataLeft);
         
         // Detect Compression Algorithm And Decompress
-        if (decompressPayload(header.version_number,compressedData,decompressed_data_vector ))
+        if (decompressPayload(header.compressionCode,compressedData,decompressed_data_vector ))
         {
         uint8_t* decompressed_data = &decompressed_data_vector[0];
         updatePayloadSize(decompressed_data_vector.size());
@@ -259,8 +260,10 @@ namespace DAQFormats {
       in.read(reinterpret_cast<char *>(&header),sizeof(header));
       if (in.fail()) THROW(EFormatException,"Too small to be event");
       if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
-      uint16_t mask = 0x00ff;
-      if ((header.version_number & mask) != (EventVersionLatest & mask)) {
+      //uint16_t mask = 0x00ff;
+      //if ((header.version_number & mask) != (EventVersionLatest & mask)) 
+      if (header.version_number  != EventVersionLatest )
+      {
 	    //should do conversion here
 	    THROW(EFormatException,"Unsupported event format version");
       }
@@ -280,13 +283,14 @@ namespace DAQFormats {
         
         // Detect Compression Algorithm And Decompress
         // decompressPayload(header.version_number,compressedData,decompressed_data_vector)
-        if (decompressPayload(header.version_number,compressedData,decompressed_data_vector ))
+        if (decompressPayload(header.compressionCode,compressedData,decompressed_data_vector ))
         { 
           INFO("Decompression Of Compressed Data Is Successful");
             uint8_t* decompressed_data = &decompressed_data_vector[0];
             updatePayloadSize(decompressed_data_vector.size());
             toggleCompression();
-            setCompressionAlgo(0x0100);
+            //setCompressionAlgo(0x0100);
+            setCompressionAlgo(0x00);
             dataLeft = decompressed_data_vector.size();
             //loadPayload(decompressed_data,decompressed_data_vector.size());
             for(int fragNum=0;fragNum<header.fragment_count;fragNum++) 
@@ -339,16 +343,16 @@ namespace DAQFormats {
       else
         return false;
     }
-    void setCompressionAlgo(uint16_t algoCode)
+    void setCompressionAlgo(uint8_t algoCode)
     {
-        // header.version is as 0x00 0x00 last byte is for FASER version hence that must not be altered
-        // All Algo Code must be from 0xffff to 0x00ff
-        if (algoCode <= 255)
-        {
-          WARNING("Invalid Code Passes, Not Altering");
-        }else{
-          header.version_number ^=algoCode;
-        } 
+        // // header.version is as 0x00 0x00 last byte is for FASER version hence that must not be altered
+        // // All Algo Code must be from 0xffff to 0x00ff
+        // if (algoCode <= 255)
+        // {
+        //   WARNING("Invalid Code Passes, Not Altering");
+        // }else{
+          header.compressionCode ^=algoCode;
+        
     }
     
     /// Return full event as vector of bytes
@@ -396,12 +400,13 @@ namespace DAQFormats {
      *
      *  Ownership is taken of fragment, i.e. don't delete it later
      */
-    bool decompressPayload(uint16_t header_version_number,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
+    bool decompressPayload(uint8_t header_compressionCode,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
   {
-    uint16_t mask = 0xff00;
-    uint16_t zstd_mask = 0x0100;
-    uint16_t zlib_mask = 0x0200;
-    if ((header_version_number & mask) == (zstd_mask&mask))
+    //uint16_t mask = 0xff00;
+    uint8_t zstd_code = 0x01;
+    uint8_t zlib_code = 0x02;
+    //if ((header_version_number & mask) == (zstd_mask&mask))
+    if (header_compressionCode == zstd_code)
     {
       DEBUG("Detected ZSTD Compression in Event");
       const size_t maxDecompressedSize = ZSTD_getFrameContentSize(compressedFragments.data(), compressedFragments.size());
@@ -422,7 +427,8 @@ namespace DAQFormats {
     outputFragments.resize(decompressedSize);
     return true;
     }
-    else if ((header_version_number & mask) == (zlib_mask&mask))
+    //else if ((header_version_number & mask) == (zlib_mask&mask))
+    else if (header_compressionCode == zlib_code)
     {
       DEBUG("Detected Zlib Compression in Event");
       outputFragments.clear();
@@ -480,9 +486,10 @@ namespace DAQFormats {
       if (datasize<sizeof(struct EventHeader)) THROW(EFormatException,"Too small to be event");
       header=*reinterpret_cast<const struct EventHeader *>(data);
       if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
-      uint16_t mask = 0x00ff;
-      if ((header.version_number & mask) != (EventVersionLatest & mask)) { // * Added support for compression algo in version
+      //uint16_t mask = 0x00ff;
+      //if ((header.version_number & mask) != (EventVersionLatest & mask)) { // * Added support for compression algo in version
 	    //should do conversion here
+      if (header.version_number == EventVersionLatest){
 	    THROW(EFormatException,"Unsupported event format version");
       }
 
@@ -515,7 +522,8 @@ namespace DAQFormats {
     uint64_t run_number() const { return header.run_number; }
     uint16_t trigger_bits() const { return header.trigger_bits; }
     uint16_t fragment_count() const { return header.fragment_count; }
-    uint16_t event_version() const { return header.version_number; }
+    uint8_t event_version() const { return header.version_number; }
+    uint8_t event_compressionCode() const { return header.compressionCode; }
 
     /// Get list of fragment source ids
     std::vector<uint32_t> getFragmentIDs() const
@@ -537,13 +545,14 @@ namespace DAQFormats {
     }
 
   private:
-    const uint16_t EventVersionLatest = 0x0001;
+    const uint8_t EventVersionLatest = 0x01;
     const uint8_t EventMarker = 0xBB;
     struct EventHeader {
       uint8_t marker;
       uint8_t event_tag;
       uint16_t trigger_bits;
-      uint16_t version_number; // Could be used to record algorithm for compression
+      uint8_t version_number; // Could be used to record algorithm for compression
+      uint8_t compressionCode;
       uint16_t header_size;
       uint32_t payload_size;
       uint8_t  fragment_count;
@@ -581,6 +590,7 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull 
        <<" status=0x"<<std::hex<<std::setw(5)<<static_cast<int>(ev.status())
        <<std::setfill(' ')
        <<" Version="<<std::dec<<ev.event_version()
+       <<  "Compression Code="<<std::dec<<ev.event_compressionCode()
        <<" time="<<std::dec<<ev.timestamp()  //FIXME: should be readable
        <<" #fragments="<<ev.fragment_count()
        <<" payload="<<std::dec<<std::setw(6)<<ev.payload_size()
