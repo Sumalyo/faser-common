@@ -276,7 +276,13 @@ namespace DAQFormats {
       uint32_t dataLeft=header.payload_size;
       // Now check if the Event header has Compression enabled
       if (header.status & 1<<11) // Compressed Event Detected
-      { DEBUG("A Compressed Event is being read");
+      {
+        DEBUG("A Compressed Event is being read");
+        // There seems to be a bug while rendering these values in std out see if this happens for anything else
+        uint16_t triggerNow = header.trigger_bits;
+        header.trigger_bits = triggerNow & 0xffff;
+        uint64_t counterNow = header.event_counter;
+        header.event_counter = counterNow & 0xffffffff;
         std::vector<uint8_t> decompressed_data_vector;
         //Copy the data array into the compressed data vector for processing
         this->compressedData.insert(this->compressedData.begin(),data,data+dataLeft);
@@ -290,7 +296,7 @@ namespace DAQFormats {
             updatePayloadSize(decompressed_data_vector.size());
             toggleCompression();
             //setCompressionAlgo(0x0100);
-            setCompressionAlgo(0x00);
+            setCompressionAlgo(this->header.compressionCode); // toggle it off
             dataLeft = decompressed_data_vector.size();
             //loadPayload(decompressed_data,decompressed_data_vector.size());
             for(int fragNum=0;fragNum<header.fragment_count;fragNum++) 
@@ -589,8 +595,8 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull 
        <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<ev.trigger_bits()
        <<" status=0x"<<std::hex<<std::setw(5)<<static_cast<int>(ev.status())
        <<std::setfill(' ')
-       <<" Version="<<std::dec<<ev.event_version()
-       <<  "Compression Code="<<std::dec<<ev.event_compressionCode()
+       <<" Version= "<<std::dec<<static_cast<int>(ev.event_version())
+       <<" Compression Code= "<<std::dec<<static_cast<int>(ev.event_compressionCode())
        <<" time="<<std::dec<<ev.timestamp()  //FIXME: should be readable
        <<" #fragments="<<ev.fragment_count()
        <<" payload="<<std::dec<<std::setw(6)<<ev.payload_size()

@@ -138,9 +138,9 @@ int main(int argc, char **argv) {
   }
   // The file input
   int nEventsRead=0;
-  CompressionUtility::configMap zstdConfig = CompressionUtility::readJsonToMap("../EventFormats/CompressionEngine/compressionConfig.json");
+  CompressionUtility::configMap CompConfig = CompressionUtility::readJsonToMap("../EventFormats/CompressionEngine/compressionConfig.json");
   CompressionUtility::EventCompressor* usedCompressor;
-  std::string compressor = zstdConfig["Compressor"];
+  std::string compressor = CompConfig["Compressor"];
   if(compressor=="ZSTD")
   {
   usedCompressor = new CompressionUtility::ZstdCompressor();
@@ -148,8 +148,17 @@ int main(int argc, char **argv) {
   {
     usedCompressor = new CompressionUtility::ZlibCompressor();
   }
-  usedCompressor->configCompression(zstdConfig);
-  usedCompressor->setupCompressionAndLogging(filename);
+  usedCompressor->configCompression(CompConfig);
+  if (debug_mode)
+  {
+    usedCompressor->setupCompressionAndLogging(filename); 
+    usedCompressor->supportDecompression();
+  }
+  // else{
+  //   usedCompressor->setupCompression();
+  // }
+  // Todo Uncomment later after testing
+  usedCompressor->setupCompressionAndLogging(filename); 
   usedCompressor->supportDecompression();
   while(in.good() and in.peek()!=EOF) {
     try {
