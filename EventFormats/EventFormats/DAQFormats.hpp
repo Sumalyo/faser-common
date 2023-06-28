@@ -587,12 +587,12 @@ inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFragm
 }
 
 inline std::ostream &operator<<(std::ostream &out, const  DAQFormats::EventFull &ev) {
-    out<<"Event: "<<std::setw(8)<<ev.event_counter()<<" (0x"<<std::hex<<std::setfill('0') <<std::setw(8)<<ev.event_id()<<") "
+    out<<"Event: "<<std::setw(8)<<ev.event_counter()<<" (0x"<<std::hex<<std::setfill('0') <<std::setw(8)<<std::right<<ev.event_id()<<") "
        <<std::setfill(' ')
        <<" run="<<std::dec<<ev.run_number()
        <<" tag="<<std::dec<<static_cast<int>(ev.event_tag())
        <<" bc="<<std::dec<<std::setw(4)<<ev.bc_id()
-       <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<ev.trigger_bits()
+       <<" trig=0x"<<std::hex<<std::setfill('0')<<std::setw(4)<<std::right<<ev.trigger_bits()
        <<" status=0x"<<std::hex<<std::setw(5)<<static_cast<int>(ev.status())
        <<std::setfill(' ')
        <<" Version= "<<std::dec<<static_cast<int>(ev.event_version())

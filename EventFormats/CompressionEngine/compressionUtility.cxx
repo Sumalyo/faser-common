@@ -418,7 +418,7 @@ bool ZlibCompressor::setupCompression()
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
-    INFO("Log :: ZSTD Compressor is set up");  
+    INFO("Log :: Zlib Compressor is set up");  
     this->__isLogging=false;
     return true;
 }
