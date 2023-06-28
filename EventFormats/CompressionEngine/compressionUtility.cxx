@@ -305,7 +305,8 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
      // Compress Event
     outputevent_vector.resize(compressedSize);
     inputEvent.loadCompressedData(outputevent);
-    inputEvent.setCompressionAlgo(0x0100);
+    //inputEvent.setCompressionAlgo(0x0100);
+    inputEvent.setCompressionAlgo(0x01);
     // Event -> Raw Fragments -> outputevent
     // 
     // inputEvent.toggleCompression();
@@ -417,7 +418,7 @@ bool ZlibCompressor::setupCompression()
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
-    INFO("Log :: ZSTD Compressor is set up");  
+    INFO("Log :: Zlib Compressor is set up");  
     this->__isLogging=false;
     return true;
 }
@@ -475,7 +476,8 @@ bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vect
         outputevent_vector.insert(outputevent_vector.end(), compressedBuffer.begin(), compressedBuffer.begin() + static_cast<long int>(compressedSize));
     } while (stream.avail_out == 0);
     inputEvent.loadCompressedData(outputevent);
-    inputEvent.setCompressionAlgo(0x0200); // Internal Code for zlib compression
+    //inputEvent.setCompressionAlgo(0x0200); // Internal Code for zlib compression
+    inputEvent.setCompressionAlgo(0x02); // Internal Code for zlib compression
     //inputEvent.updatePayloadSize(compressedSize);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
