@@ -147,6 +147,9 @@ int main(int argc, char **argv) {
   }else if(compressor=="Zlib")
   {
     usedCompressor = new CompressionUtility::ZlibCompressor();
+  }else if(compressor=="LZ4")
+  {
+    usedCompressor = new CompressionUtility::lz4Compressor();
   }
   usedCompressor->configCompression(CompConfig);
   if (debug_mode)

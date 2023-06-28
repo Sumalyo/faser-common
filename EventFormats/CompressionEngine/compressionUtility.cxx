@@ -548,4 +548,166 @@ ZlibCompressor::~ZlibCompressor(){
         // if (this->__isDecompressing)
         // inflateEnd(&decompressstream);
     }
+
+void lz4Compressor::configCompression(configMap& config) {
+    for (const auto& pair : config) {
+    this->CompressorConfig[pair.first] = pair.second;  // I can use this to set up enforcemnets later like
+    }
 }
+
+bool lz4Compressor::setupCompression()
+{
+    try
+    {
+        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        this->compressionLevel = std::stoi(valueOfKey1);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    INFO("Log :: LZ4 Compressor is set up");  
+    this->__isLogging=false;
+    return true;
+}
+void lz4Compressor::supportDecompression()
+{
+    this->__isDecompressing=true; 
+}
+bool lz4Compressor::setupCompressionAndLogging(std::string Filename){
+    
+    std::string config = this->mapToString(this->CompressorConfig);
+    this->initializeStruct(Filename,"LZ4 Compressor",config);
+    bool isSetup = this->setupCompression();
+    if(isSetup)
+    {
+        this->__isLogging=true; // Indicate that the Logging is set up
+        INFO("Log:: Logging Enabled in Compressor");
+    }
+    return isSetup;
+}
+bool lz4Compressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
+    /*
+    Steps TO DO
+    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
+    - [ ] Load the Compressor Configuration appropriately
+    - [ ] Do Compression and store result in a stream of bytes
+    - [ ] Record metrics and populate struct accordingly
+    */
+   
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+    //size_t compressedSize = 0;
+    std::vector<uint8_t> outputevent;
+    size_t maxCompressedSize = LZ4_compressBound(eventFragments->size());
+    outputevent_vector.resize(maxCompressedSize);
+    outputevent.resize(maxCompressedSize);
+
+    // Compress the input vector
+    int compressedSize = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
+                                         reinterpret_cast<char*>(outputevent.data()),
+                                         eventFragments->size(),
+                                         maxCompressedSize,
+                                         this->compressionLevel);
+    if (compressedSize <= 0) {
+        return false;  // Compression failed
+    }
+    auto stop = std::chrono::high_resolution_clock::now();
+    int compressedSize2 = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
+                                         reinterpret_cast<char*>(outputevent_vector.data()),
+                                         eventFragments->size(),
+                                         maxCompressedSize,
+                                         this->compressionLevel);
+    if (compressedSize2 <= 0) {
+        return false;  // Compression failed
+    }
+    // Resize the compressed vector to the actual compressed size
+    outputevent.resize(compressedSize);
+    outputevent_vector.resize(compressedSize);
+    inputEvent.loadCompressedData(outputevent);
+    inputEvent.setCompressionAlgo(0x03); // Internal Code for lz4 compression
+   
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    if (this->__isLogging)
+    {
+        EventData evData;
+        evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+        evData.eventHeader.run = std::to_string(inputEvent.run_number());
+        evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
+        evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+        evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+        evData.eventHeader.payloadSize = inputEvent.payload_size();
+        evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+        evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+        evData.inputSize = std::to_string(eventFragments->size()); // TODO See Best Implementation
+        evData.outputSize = std::to_string(outputevent.size());
+        evData.compressionRatio = std::to_string(static_cast<double>(eventFragments->size()) / outputevent.size());
+        evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+        this->addEventData(evData);
+    }
+    
+    return true;
+
+}
+bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
+{
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    // Prepare input and output parameters
+    const char* inputBuffer = reinterpret_cast<const char*>(compressedFragments.data());
+    size_t inputSize = compressedFragments.size();
+    size_t estimatedDecompressedSize = compressedFragments.size() * 3;
+    int decompressedSize = 0;
+
+    // Loop until the decompressed size is not larger than the estimated size
+    while (decompressedSize <= estimatedDecompressedSize) {
+        outputFragments.resize(estimatedDecompressedSize);
+
+        // Decompress the input vector
+        decompressedSize = LZ4_decompress_safe(inputBuffer,
+                                               reinterpret_cast<char*>(outputFragments.data()),
+                                               inputSize,
+                                               estimatedDecompressedSize);
+
+        if (decompressedSize >= 0) {
+            // Decompression successful
+            outputFragments.resize(decompressedSize);
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            if (this->__isLogging && this->__isDecompressing)
+            {
+                EventData evData;
+                evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+                evData.eventHeader.run = std::to_string(inputEvent.run_number());
+                evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+                evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()^1<<11)); // dummy for compression
+                evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+                evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+                evData.eventHeader.payloadSize = decompressedSize; // dummy for logging
+                evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+                evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+                evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
+                evData.outputSize =std::to_string(decompressedSize);
+                evData.compressionRatio =std::to_string(static_cast<double>(decompressedSize/compressedFragments.size()));
+                evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+                this->addEventDataDecompressed(evData);
+            }
+            return true;
+        }
+
+        // Increase the estimated decompressed size and try again
+        estimatedDecompressedSize *= 2;
+    }
+
+    return false;  // Decompression failed
+
+}
+
+lz4Compressor::~lz4Compressor()
+{}
+
+
+}
+

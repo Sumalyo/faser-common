@@ -7,6 +7,9 @@
 #include <string.h> //for hadling string operations
 #include <chrono>
 #include <zstd.h>
+#include <brotli/encode.h>
+#include <brotli/decode.h>
+#include <lz4hc.h>
 #include <vector>
 #include <random>
 #include <filesystem>
@@ -108,6 +111,21 @@ public:
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
     ~ZlibCompressor();
+};
+class lz4Compressor: public EventCompressor {
+public:
+    int compressionLevel;
+    lz4Compressor():EventCompressor()
+    {
+        compressionLevel = LZ4HC_CLEVEL_DEFAULT;
+    };
+    void configCompression(configMap& config);
+    bool setupCompression();
+    void supportDecompression();
+    bool setupCompressionAndLogging(std::string Filename);
+    bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
+    bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
+    ~lz4Compressor();
 };
 }
 #endif
