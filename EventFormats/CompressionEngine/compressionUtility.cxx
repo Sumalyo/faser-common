@@ -282,7 +282,7 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     outputevent_vector.resize(maxOutputSize);
 
     // Compress the input data and store the compressed data in the output vector
-    int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]);
+    int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // FIXME Bug here Please use a data member compression level and populate from there
     auto start = std::chrono::high_resolution_clock::now();
     size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
     if (ZSTD_isError(compressedSize)) {
@@ -707,6 +707,192 @@ bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vecto
 
 lz4Compressor::~lz4Compressor()
 {}
+
+bool brotliCompressor::setupCompression()
+{
+    
+    if (!this->state) {
+    ERROR("Error: could not create Brotli compression context");
+    //std::cerr << "Error: could not create zstd compression context" << std::endl;
+    return false;
+    }
+    try
+    {
+        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        this->compressionLevel = std::stoi(valueOfKey1);
+        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    INFO("Log :: Brotli Compressor is set up");  
+    this->__isLogging=false;
+    return true;
+}
+bool brotliCompressor::setupCompressionAndLogging(std::string Filename){
+    
+    std::string config = this->mapToString(this->CompressorConfig);
+    this->initializeStruct(Filename,"Brotli Compressor",config);
+    bool isSetup = this->setupCompression();
+    if(isSetup)
+    {
+        this->__isLogging=true; // Indicate that the Logging is set up
+        INFO("Log:: Logging Enabled in Compressor");
+    }
+    return isSetup;
+}
+void brotliCompressor::configCompression(configMap& config) {
+    for (const auto& pair : config) {
+    this->CompressorConfig[pair.first] = pair.second;  // I can use this to set up enforcemnets later like
+    }
+}
+void brotliCompressor::supportDecompression()
+{
+    this->__isDecompressing=true; 
+}
+bool brotliCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
+    /*
+    Steps TO DO
+    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
+    - [ ] Load the Compressor Configuration appropriately
+    - [ ] Do Compression and store result in a stream of bytes
+    - [ ] Record metrics and populate struct accordingly
+    */
+   
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+    //size_t compressedSize = 0;
+    std::vector<uint8_t> outputevent;
+    this->state = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
+    size_t compressedSize = BrotliEncoderMaxCompressedSize(eventFragments->size());
+    outputevent.resize(compressedSize);
+    outputevent_vector.resize(compressedSize);
+    size_t availableIn = eventFragments->size();
+    const uint8_t* nextIn = eventFragments->data();
+    size_t availableOut = outputevent.size();
+    uint8_t* nextOut = outputevent.data();
+    while (true) {
+        if (!BrotliEncoderCompressStream(state, BROTLI_OPERATION_PROCESS,
+                                         &availableIn, &nextIn,
+                                         &availableOut, &nextOut, nullptr)) {
+            BrotliEncoderDestroyInstance(state);
+            return false;
+        }
+
+        if (BrotliEncoderHasMoreOutput(state))
+            compressedSize -= availableOut;
+
+        if (availableIn == 0 && !BrotliEncoderCompressStream(state, BROTLI_OPERATION_FINISH,
+                                                             &availableIn, &nextIn,
+                                                             &availableOut, &nextOut, nullptr)) {
+            BrotliEncoderDestroyInstance(state);
+            return false;
+        }
+
+        if (!BrotliEncoderHasMoreOutput(state))
+            break;
+    }
+    outputevent.resize(compressedSize);
+    BrotliEncoderDestroyInstance(state);
+    auto stop = std::chrono::high_resolution_clock::now();
+    outputevent_vector.assign(outputevent.begin(),outputevent.end());
+    inputEvent.loadCompressedData(outputevent);
+    inputEvent.setCompressionAlgo(0x04); // Internal Code for lz4 compression
+    // Populate output event vector with the same contents
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    if (this->__isLogging)
+    {
+        EventData evData;
+        evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+        evData.eventHeader.run = std::to_string(inputEvent.run_number());
+        evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()));
+        evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+        evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+        evData.eventHeader.payloadSize = inputEvent.payload_size();
+        evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+        evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+        evData.inputSize = std::to_string(eventFragments->size()); // TODO See Best Implementation
+        evData.outputSize = std::to_string(outputevent.size());
+        evData.compressionRatio = std::to_string(static_cast<double>(eventFragments->size()) / outputevent.size());
+        evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+        this->addEventData(evData);
+    }
+    
+    return true;
+
+}
+bool brotliCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
+{
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    if (decstate == nullptr) {
+        ERROR("Can not create brotli decmpression state");
+        return false;  // Failed to create Brotli decoder instance
+    }
+    const uint8_t* inputBuffer = compressedFragments.data();
+    size_t inputSize = compressedFragments.size();
+    size_t availableInput = inputSize;
+    size_t totalOutput = 0;
+    outputFragments.resize(inputSize * 10);  // Initial guess for the decompressed size
+    while (true) {
+        size_t outputBufferLength = outputFragments.size() - totalOutput;
+        uint8_t* outputBuffer = outputFragments.data() + totalOutput;
+
+        BrotliDecoderResult result = BrotliDecoderDecompressStream(decstate, &availableInput, &inputBuffer, &outputBufferLength, &outputBuffer, &totalOutput);
+
+        if (result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
+            // Not enough input data to continue decompression
+            break;
+        }
+
+        if (result == BROTLI_DECODER_RESULT_SUCCESS) {
+            // Decompression successful
+            break;
+        }
+
+        if (result == BROTLI_DECODER_RESULT_ERROR) {
+            // Error occurred during decompression
+            return false;
+        }
+
+        // Resize the output vector to accommodate more data
+        outputFragments.resize(outputFragments.size() * 2);
+    }
+
+    // Resize the output vector to the actual decompressed size
+    outputFragments.resize(totalOutput);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    if (this->__isLogging && this->__isDecompressing)
+    {
+        EventData evData;
+        evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+        evData.eventHeader.run = std::to_string(inputEvent.run_number());
+        evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()^1<<11)); // dummy for compression
+        evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+        evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+        evData.eventHeader.payloadSize = totalOutput; // dummy for logging
+        evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+        evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+        evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
+        evData.outputSize =std::to_string(totalOutput);
+        evData.compressionRatio =std::to_string(static_cast<double>(totalOutput/compressedFragments.size()));
+        evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+        this->addEventDataDecompressed(evData);
+    }
+
+
+    return true;
+}
+brotliCompressor::~brotliCompressor()
+{
+    //BrotliEncoderDestroyInstance(this->state);
+    BrotliDecoderDestroyInstance(this->decstate);
+}
 
 
 }

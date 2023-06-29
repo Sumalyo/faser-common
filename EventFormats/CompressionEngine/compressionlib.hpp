@@ -127,5 +127,24 @@ public:
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
     ~lz4Compressor();
 };
+class brotliCompressor: public EventCompressor {
+public:
+    BrotliEncoderState* state;
+    BrotliDecoderState* decstate;
+    int compressionLevel;
+    brotliCompressor():EventCompressor()
+    {
+        this->state = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
+        this->decstate = BrotliDecoderCreateInstance(nullptr, nullptr, nullptr);
+        compressionLevel = BROTLI_DEFAULT_QUALITY;
+    };
+    void configCompression(configMap& config);
+    bool setupCompression();
+    void supportDecompression();
+    bool setupCompressionAndLogging(std::string Filename);
+    bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
+    bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
+    ~brotliCompressor();
+};
 }
 #endif

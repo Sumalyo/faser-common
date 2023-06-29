@@ -150,6 +150,9 @@ int main(int argc, char **argv) {
   }else if(compressor=="LZ4")
   {
     usedCompressor = new CompressionUtility::lz4Compressor();
+  }else if(compressor=="Brotli")
+  {
+    usedCompressor = new CompressionUtility::brotliCompressor();
   }
   usedCompressor->configCompression(CompConfig);
   if (debug_mode)
@@ -158,7 +161,7 @@ int main(int argc, char **argv) {
     usedCompressor->supportDecompression();
   }
   // else{
-  //   usedCompressor->setupCompression();
+     // usedCompressor->setupCompression();
   // }
   // Todo Uncomment later after testing
   usedCompressor->setupCompressionAndLogging(filename); 
