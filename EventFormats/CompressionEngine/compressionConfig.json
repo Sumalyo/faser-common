@@ -1,4 +1,4 @@
 {
-    "Compressor":"Brotli",
-    "compressionLevel":"11"
+    "Compressor":"ZSTD",
+    "compressionLevel":"5"
 }

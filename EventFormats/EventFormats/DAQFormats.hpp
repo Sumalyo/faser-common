@@ -448,6 +448,7 @@ namespace DAQFormats {
       outputFragments.resize(decompressedSize);
       return true;
     }
+    ERROR("Invalid Compression code detected");
     return false;
   }
 
