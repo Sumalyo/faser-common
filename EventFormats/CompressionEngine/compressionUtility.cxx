@@ -219,27 +219,27 @@ void ZstdCompressor::configCompression(configMap& config) {
 }
 bool ZstdCompressor::setupCompression()
 {
-    ZSTD_CCtx* ctx = ZSTD_createCCtx();
+    // ZSTD_CCtx* ctx = ZSTD_createCCtx();
     if (!ctx) {
     ERROR("Error: could not create zstd compression context");
     //std::cerr << "Error: could not create zstd compression context" << std::endl;
     return false;
     }
-    try
-    {
-        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
-        const int compressionLevel = std::stoi(valueOfKey1);
-        if (ZSTD_isError(ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel))) {
-        ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel);
-        ERROR( "Error: could not set zstd compression level" );
-        return false;
-        }
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
-        return false;
-    }
+    // try
+    // {
+    //     std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+    //     const int compressionLevel = std::stoi(valueOfKey1);
+    //     if (ZSTD_isError(ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel))) {
+    //     ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel);
+    //     ERROR( "Error: could not set zstd compression level" );
+    //     return false;
+    //     }
+    // }
+    // catch(const std::exception& e)
+    // {
+    //     std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+    //     return false;
+    // }
     INFO("Log :: ZSTD Compressor is set up");  
     this->__isLogging=false;
     return true;
