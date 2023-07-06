@@ -126,14 +126,14 @@ int main(int argc, char **argv) {
   //Todo Add support for user defined filename
   std::ifstream in(filename, std::ios::binary);
   if (!in.is_open()){
-    std::cout << "ERROR: can't open file "<<filename<<std::endl;
+    std::cout << "ERROR: can't open input file "<<filename<<std::endl;
     return 1;
   }
   std::ios_base::openmode mode;
   mode = std::ios::trunc;
   std::ofstream out(outfilename, std::ios::out | std::ios::binary | mode);
   if (!out.is_open()){
-    std::cout << "ERROR: can't open file "<<outfilename<<std::endl;
+    std::cout << "ERROR: can't open output file "<<outfilename<<std::endl;
     return 1;
   }
   // The file input
