@@ -225,21 +225,37 @@ bool ZstdCompressor::setupCompression()
     //std::cerr << "Error: could not create zstd compression context" << std::endl;
     return false;
     }
-    // try
-    // {
-    //     std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
-    //     const int compressionLevel = std::stoi(valueOfKey1);
-    //     if (ZSTD_isError(ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel))) {
-    //     ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel);
-    //     ERROR( "Error: could not set zstd compression level" );
-    //     return false;
-    //     }
-    // }
-    // catch(const std::exception& e)
-    // {
-    //     std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
-    //     return false;
-    // }
+    try
+    {
+        //std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
+        this->compressionLevel = std::stoi(valueOfKey1);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 7");
+        this->compressionLevel = 7;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    try
+    {
+        //std::string valueOfKey2 = this->CompressorConfig["useDictionary"];
+        std::string valueOfKey2 = this->CompressorConfig.at("useDictionary");
+        this->dictionarySupport = std::stoi(valueOfKey2);
+    }
+    catch (const std::out_of_range& e) {
+        //INFO("Not using dictionary Compression ");
+        this->dictionarySupport = 0;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    
     INFO("Log :: ZSTD Compressor is set up");  
     this->__isLogging=false;
     return true;
@@ -282,7 +298,16 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     outputevent_vector.resize(maxOutputSize);
 
     // Compress the input data and store the compressed data in the output vector
-    int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // FIXME Bug here Please use a data member compression level and populate from there
+    //int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // // FIXME Bug here Please use a data member compression level and populate from there
+    int compressionLevel = this->compressionLevel;
+    int dictionarySupport = this->dictionarySupport;
+    if (dictionarySupport)
+    {
+        INFO("Using Dictionary for compression");
+    }
+    else{
+        INFO("Not using Dictionary compression here");
+    }
     auto start = std::chrono::high_resolution_clock::now();
     size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
     if (ZSTD_isError(compressedSize)) {
@@ -405,19 +430,33 @@ bool ZlibCompressor::setupCompression()
     std::memset(&stream, 0, sizeof(stream));
     try
     {
-        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
         this->compressionLevel = std::stoi(valueOfKey1);
-        std::string valueOfKey2 = this->CompressorConfig["bufferSize"];
-        this->bufferSize = std::stoi(valueOfKey2);
-        z_stream stream;
-        memset(&stream, 0, sizeof(stream));
-        
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 3");
+        this->compressionLevel = 3;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
+    try
+    {
+    std::string valueOfKey2 = this->CompressorConfig.at("bufferSize");
+    this->bufferSize = std::stoi(valueOfKey2);
+    }catch (const std::out_of_range& e) {
+        INFO("Using Default Buffer Size 1024");
+        this->bufferSize = 1024;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    z_stream stream;
+    memset(&stream, 0, sizeof(stream));
     INFO("Log :: Zlib Compressor is set up");  
     this->__isLogging=false;
     return true;
@@ -559,8 +598,12 @@ bool lz4Compressor::setupCompression()
 {
     try
     {
-        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
         this->compressionLevel = std::stoi(valueOfKey1);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 7");
+        this->compressionLevel = 7;
     }
     catch(const std::exception& e)
     {
@@ -720,13 +763,25 @@ bool brotliCompressor::setupCompression()
     {
         std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
         this->compressionLevel = std::stoi(valueOfKey1);
-        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 7");
+        this->compressionLevel = 7;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
+    try
+    {
+        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
     INFO("Log :: Brotli Compressor is set up");  
     this->__isLogging=false;
     return true;

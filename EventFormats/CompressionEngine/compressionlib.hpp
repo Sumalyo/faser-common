@@ -79,6 +79,9 @@ public:
 class ZstdCompressor: public EventCompressor {
 public:
     ZSTD_CCtx* ctx;
+    int compressionLevel;
+    int dictionarySupport = 0;
+    std::string dictionaryPath = "";
     ZstdCompressor():EventCompressor()
     {
     ctx =  ZSTD_createCCtx();
