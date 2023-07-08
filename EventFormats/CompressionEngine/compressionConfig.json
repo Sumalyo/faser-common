@@ -1,4 +1,6 @@
 {
-    "Compressor":"LZ4",
-    "compressionLevel":"5"
+    "Compressor":"ZSTD",
+    "compressionLevel":"7"
+
+
 }
