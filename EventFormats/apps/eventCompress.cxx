@@ -1,3 +1,10 @@
+/*
+  Copyright (C) 2023 CERN for the benefit of the FASER collaboration
+*/
+
+///////////////////////////////////////////////////////////////////
+// eventCompress.cxx, (c) FASER Detector software
+///////////////////////////////////////////////////////////////////
 #include "EventFormats/DAQFormats.hpp"
 #include <getopt.h>
 #include "EventFormats/TLBDataFragment.hpp"
