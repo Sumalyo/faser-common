@@ -120,6 +120,9 @@ public:
 class lz4Compressor: public EventCompressor {
 public:
     int compressionLevel;
+    int dictionarySupport = 0;
+    std::string dictionaryPath = "/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/eventProcess.dict";
+    std::vector<char> dictionaryData;
     lz4Compressor():EventCompressor()
     {
         compressionLevel = LZ4HC_CLEVEL_DEFAULT;

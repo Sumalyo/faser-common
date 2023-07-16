@@ -1,6 +1,4 @@
 {
-    "Compressor":"ZSTD",
-    "compressionLevel":"7"
-
-
+    "Compressor":"LZ4",
+    "useDictionary":"1"
 }
