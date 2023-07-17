@@ -79,6 +79,9 @@ public:
 class ZstdCompressor: public EventCompressor {
 public:
     ZSTD_CCtx* ctx;
+    int compressionLevel;
+    int dictionarySupport = 0;
+    std::string dictionaryPath = "/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/eventProcess.dict";
     ZstdCompressor():EventCompressor()
     {
     ctx =  ZSTD_createCCtx();
@@ -90,6 +93,8 @@ public:
     bool Compressevent(DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent);
     bool deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments);
     ~ZstdCompressor();
+private:
+    bool loadDictionaryFromFile(const std::string& filePath, std::vector<uint8_t>& dictionary);
 };
 class ZlibCompressor: public EventCompressor {
 public:
@@ -115,6 +120,9 @@ public:
 class lz4Compressor: public EventCompressor {
 public:
     int compressionLevel;
+    int dictionarySupport = 0;
+    std::string dictionaryPath = "/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/eventProcess.dict";
+    std::vector<char> dictionaryData;
     lz4Compressor():EventCompressor()
     {
         compressionLevel = LZ4HC_CLEVEL_DEFAULT;

@@ -225,21 +225,57 @@ bool ZstdCompressor::setupCompression()
     //std::cerr << "Error: could not create zstd compression context" << std::endl;
     return false;
     }
-    // try
-    // {
-    //     std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
-    //     const int compressionLevel = std::stoi(valueOfKey1);
-    //     if (ZSTD_isError(ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel))) {
-    //     ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, compressionLevel);
-    //     ERROR( "Error: could not set zstd compression level" );
-    //     return false;
-    //     }
-    // }
-    // catch(const std::exception& e)
-    // {
-    //     std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
-    //     return false;
-    // }
+    try
+    {
+        //std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
+        this->compressionLevel = std::stoi(valueOfKey1);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 7");
+        this->compressionLevel = 7;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    try
+    {
+        //std::string valueOfKey2 = this->CompressorConfig["useDictionary"];
+        std::string valueOfKey2 = this->CompressorConfig.at("useDictionary");
+        this->dictionarySupport = std::stoi(valueOfKey2);
+    }
+    catch (const std::out_of_range& e) {
+        //INFO("Not using dictionary Compression ");
+        this->dictionarySupport = 0;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+
+    int dictionarySupport = this->dictionarySupport;
+    if (dictionarySupport)
+    {
+
+        INFO("Using Dictionary for compression");
+        std::vector<uint8_t> dictionary; // FIXME BUG Memory Manage this
+        if (!this->dictionaryPath.empty()) {
+        if (!loadDictionaryFromFile(this->dictionaryPath, dictionary)) {
+            // Failed to load the dictionary
+            ZSTD_freeCCtx(ctx);
+            return false;
+        }
+        ZSTD_CCtx_loadDictionary(ctx, dictionary.data(), dictionary.size());
+    }
+
+    }
+    else{
+        INFO("Not using Dictionary compression here");
+    }
+
     INFO("Log :: ZSTD Compressor is set up");  
     this->__isLogging=false;
     return true;
@@ -259,6 +295,30 @@ bool ZstdCompressor::setupCompressionAndLogging(std::string Filename){
         INFO("Log:: Logging Enabled in Compressor");
     }
     return isSetup;
+}
+
+bool ZstdCompressor::loadDictionaryFromFile(const std::string& filePath, std::vector<uint8_t>& dictionary)
+{
+    // Open the file in binary mode
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        // Failed to open the file
+        return false;
+    }
+
+    // Get the size of the file
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Read the file contents into the dictionary vector
+    dictionary.resize(fileSize);
+    file.read(reinterpret_cast<char*>(dictionary.data()), fileSize);
+
+    // Close the file
+    file.close();
+
+    return true;
 }
 
 bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
@@ -282,7 +342,8 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     outputevent_vector.resize(maxOutputSize);
 
     // Compress the input data and store the compressed data in the output vector
-    int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // FIXME Bug here Please use a data member compression level and populate from there
+    //int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // // FIXME Bug here Please use a data member compression level and populate from there
+    int compressionLevel = this->compressionLevel;
     auto start = std::chrono::high_resolution_clock::now();
     size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
     if (ZSTD_isError(compressedSize)) {
@@ -306,7 +367,16 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     outputevent_vector.resize(compressedSize);
     inputEvent.loadCompressedData(outputevent);
     //inputEvent.setCompressionAlgo(0x0100);
-    inputEvent.setCompressionAlgo(0x01);
+    if (this->dictionarySupport)
+    {
+        inputEvent.setCompressionAlgo(0x0A);
+        INFO("Using Dictionary for compression");
+    }
+    else{
+        inputEvent.setCompressionAlgo(0x01);
+        DEBUG("Not using Dictionary compression here");
+    }
+    
     // Event -> Raw Fragments -> outputevent
     // 
     // inputEvent.toggleCompression();
@@ -338,6 +408,8 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
 //
 bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
 {
+    if (!this->dictionarySupport)
+    {
     //Todo optimize this if possible using a common decompression context
     auto start = std::chrono::high_resolution_clock::now();
     // Time Sensitive Code
@@ -381,6 +453,71 @@ bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
         this->addEventDataDecompressed(evData);
     }
     return true;
+    }
+    else
+    {
+        //auto start = std::chrono::high_resolution_clock::now(); // ? Should I start the clock here
+        ZSTD_DCtx* dctx = ZSTD_createDCtx();
+        std::vector<uint8_t> dictionary;
+        std::string dictionaryFilePath = this->dictionaryPath;
+        if (!dictionaryFilePath.empty()) {
+            if (!loadDictionaryFromFile(dictionaryFilePath, dictionary)) {
+                // Failed to load the dictionary
+                ZSTD_freeDCtx(dctx);
+                return false;
+            }
+            ZSTD_DCtx_loadDictionary(dctx, dictionary.data(), dictionary.size());
+        }
+        auto start = std::chrono::high_resolution_clock::now();
+        size_t maxDecompressedSize = ZSTD_getFrameContentSize(compressedFragments.data(), compressedFragments.size());
+        if (maxDecompressedSize == ZSTD_CONTENTSIZE_ERROR || maxDecompressedSize == ZSTD_CONTENTSIZE_UNKNOWN) {
+            ZSTD_freeDCtx(dctx);
+            return false;
+        }
+
+        // Resize the output vector to accommodate the decompressed data
+        outputFragments.resize(maxDecompressedSize);
+
+        // Decompress the input vector
+        size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), outputFragments.size(), compressedFragments.data(), compressedFragments.size());
+        
+
+        // Check if decompression was successful
+        if (ZSTD_isError(decompressedSize)) {
+            // Decompression failed
+            ZSTD_freeDCtx(dctx);
+            return false;
+        }
+
+        // Resize the output vector to the actual decompressed size
+        outputFragments.resize(decompressedSize);
+
+        // Cleanup and return success
+        ZSTD_freeDCtx(dctx);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    if (this->__isLogging && this->__isDecompressing)
+    {
+        EventData evData;
+        evData.eventHeader.Event = std::to_string(inputEvent.event_counter());
+        evData.eventHeader.run = std::to_string(inputEvent.run_number());
+        evData.eventHeader.tag = std::to_string(static_cast<int>(inputEvent.event_tag()));
+        evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()^1<<11)); // dummy for compression
+        evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
+        evData.eventHeader.fragmentCount = inputEvent.fragment_count();
+        evData.eventHeader.payloadSize = decompressedSize; // dummy for logging
+        evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
+        evData.eventHeader.time = std::to_string(inputEvent.timestamp());
+        evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
+        evData.outputSize =std::to_string(decompressedSize);
+        evData.compressionRatio =std::to_string(static_cast<double>(decompressedSize/compressedFragments.size()));
+        evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
+        this->addEventDataDecompressed(evData);
+    }
+    return true;
+
+    }
+    return false;
 }
 
 ZstdCompressor::~ZstdCompressor(){
@@ -405,19 +542,33 @@ bool ZlibCompressor::setupCompression()
     std::memset(&stream, 0, sizeof(stream));
     try
     {
-        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
         this->compressionLevel = std::stoi(valueOfKey1);
-        std::string valueOfKey2 = this->CompressorConfig["bufferSize"];
-        this->bufferSize = std::stoi(valueOfKey2);
-        z_stream stream;
-        memset(&stream, 0, sizeof(stream));
-        
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 3");
+        this->compressionLevel = 3;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
+    try
+    {
+    std::string valueOfKey2 = this->CompressorConfig.at("bufferSize");
+    this->bufferSize = std::stoi(valueOfKey2);
+    }catch (const std::out_of_range& e) {
+        INFO("Using Default Buffer Size 1024");
+        this->bufferSize = 1024;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+    z_stream stream;
+    memset(&stream, 0, sizeof(stream));
     INFO("Log :: Zlib Compressor is set up");  
     this->__isLogging=false;
     return true;
@@ -559,13 +710,53 @@ bool lz4Compressor::setupCompression()
 {
     try
     {
-        std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
         this->compressionLevel = std::stoi(valueOfKey1);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 9");
+        this->compressionLevel = 9;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
+    }
+    try
+    {
+        //std::string valueOfKey2 = this->CompressorConfig["useDictionary"];
+        std::string valueOfKey2 = this->CompressorConfig.at("useDictionary");
+        this->dictionarySupport = std::stoi(valueOfKey2);
+    }
+    catch (const std::out_of_range& e) {
+        //INFO("Not using dictionary Compression ");
+        this->dictionarySupport = 0;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
+        return false;
+    }
+
+    int dictionarySupport = this->dictionarySupport;
+    if (dictionarySupport)
+    {
+
+        INFO("Using Dictionary for compression");
+        std::ifstream dictionaryFile(dictionaryPath, std::ios::binary);
+        if (!dictionaryFile) {
+            std::cout << "Failed to open dictionary file.\n";
+            return false;  // Unable to open the dictionary file
+        }
+         char ch;
+        while (dictionaryFile.get(ch)) {
+            dictionaryData.push_back(ch);
+        }
+        dictionaryFile.close();
+        
+    }
+    else{
+        INFO("Not using Dictionary compression here");
     }
     INFO("Log :: LZ4 Compressor is set up");  
     this->__isLogging=false;
@@ -598,35 +789,77 @@ bool lz4Compressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vecto
    
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
+    LZ4_streamHC_t* lz4Stream = LZ4_createStreamHC();
+    int compressedSize = 0;
+    int compressedSize2 = 0;
     //size_t compressedSize = 0;
     std::vector<uint8_t> outputevent;
     size_t maxCompressedSize = LZ4_compressBound(eventFragments->size());
     outputevent_vector.resize(maxCompressedSize);
     outputevent.resize(maxCompressedSize);
+    if (this->dictionarySupport)
+    {
+        int dictSize = dictionaryData.size();
+        LZ4_loadDictHC(lz4Stream, dictionaryData.data(), dictSize);
+    }
 
     // Compress the input vector
-    int compressedSize = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
+    if (this->dictionarySupport)
+    {
+        compressedSize = LZ4_compress_HC_continue(
+        lz4Stream,
+        reinterpret_cast<const char*>(eventFragments->data()),
+        reinterpret_cast<char*>(outputevent.data()),
+        eventFragments->size(),
+        maxCompressedSize
+    );
+    }
+    else
+    {
+    compressedSize = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
                                          reinterpret_cast<char*>(outputevent.data()),
                                          eventFragments->size(),
                                          maxCompressedSize,
                                          this->compressionLevel);
+    }
     if (compressedSize <= 0) {
         return false;  // Compression failed
     }
     auto stop = std::chrono::high_resolution_clock::now();
-    int compressedSize2 = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
+    if (this->dictionarySupport)
+    {
+            compressedSize2 = LZ4_compress_HC_continue(
+            lz4Stream,
+            reinterpret_cast<const char*>(eventFragments->data()),
+            reinterpret_cast<char*>(outputevent_vector.data()),
+            eventFragments->size(),
+            maxCompressedSize
+        );
+    }
+    else
+    {
+    compressedSize2 = LZ4_compress_HC(reinterpret_cast<const char*>(eventFragments->data()),
                                          reinterpret_cast<char*>(outputevent_vector.data()),
                                          eventFragments->size(),
                                          maxCompressedSize,
                                          this->compressionLevel);
+    }
     if (compressedSize2 <= 0) {
         return false;  // Compression failed
     }
     // Resize the compressed vector to the actual compressed size
+    LZ4_freeStreamHC(lz4Stream);
     outputevent.resize(compressedSize);
-    outputevent_vector.resize(compressedSize);
+    outputevent_vector.resize(compressedSize2);
     inputEvent.loadCompressedData(outputevent);
-    inputEvent.setCompressionAlgo(0x03); // Internal Code for lz4 compression
+    if(this->dictionarySupport)
+    {
+        inputEvent.setCompressionAlgo(0x0B ); // Internal Code for lz4 compression with dictionary
+    }
+    else
+    {
+        inputEvent.setCompressionAlgo(0x03); // Internal Code for lz4 compression
+    }
    
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     if (this->__isLogging)
@@ -666,10 +899,24 @@ bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vecto
         outputFragments.resize(estimatedDecompressedSize);
 
         // Decompress the input vector
+        if (this->dictionarySupport)
+        {
+            decompressedSize = LZ4_decompress_safe_usingDict(
+            inputBuffer,
+            reinterpret_cast<char*>(outputFragments.data()),
+            inputSize,
+            estimatedDecompressedSize,
+            dictionaryData.data(),
+            dictionaryData.size()
+        );
+        }
+        else
+        {
         decompressedSize = LZ4_decompress_safe(inputBuffer,
                                                reinterpret_cast<char*>(outputFragments.data()),
                                                inputSize,
                                                estimatedDecompressedSize);
+        }
 
         if (decompressedSize >= 0) {
             // Decompression successful
@@ -720,13 +967,25 @@ bool brotliCompressor::setupCompression()
     {
         std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
         this->compressionLevel = std::stoi(valueOfKey1);
-        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+    }
+    catch (const std::out_of_range& e) {
+        INFO("Using Default Compression level 7");
+        this->compressionLevel = 7;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n'; //TODO Replace with DAQ Exceptions
         return false;
     }
+    try
+    {
+        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
     INFO("Log :: Brotli Compressor is set up");  
     this->__isLogging=false;
     return true;
