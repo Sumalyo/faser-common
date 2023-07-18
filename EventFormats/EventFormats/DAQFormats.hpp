@@ -278,11 +278,6 @@ namespace DAQFormats {
       if (header.status & 1<<11) // Compressed Event Detected
       {
         // DEBUG("A Compressed Event is being read");
-        // There seems to be a bug while rendering these values in std out see if this happens for anything else
-        uint16_t triggerNow = header.trigger_bits;
-        header.trigger_bits = triggerNow & 0xffff; // FIXME
-        uint64_t counterNow = header.event_counter;
-        header.event_counter = counterNow & 0xffffffff; // FIXME
         std::vector<uint8_t> decompressed_data_vector;
         //Copy the data array into the compressed data vector for processing
         this->compressedData.insert(this->compressedData.begin(),data,data+dataLeft);
