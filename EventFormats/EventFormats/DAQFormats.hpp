@@ -228,7 +228,7 @@ namespace DAQFormats {
       
       if (header.status & 1<<11) // Compressed Event Detected
       { 
-        DEBUG("A Compressed Event is being read");
+        // DEBUG("A Compressed Event is being read");
         std::vector<uint8_t> decompressed_data_vector;
         //Copy the data array into the compressed data vector for processing
         this->compressedData.insert(this->compressedData.begin(),data,data+dataLeft);
@@ -277,7 +277,7 @@ namespace DAQFormats {
       // Now check if the Event header has Compression enabled
       if (header.status & 1<<11) // Compressed Event Detected
       {
-        DEBUG("A Compressed Event is being read");
+        // DEBUG("A Compressed Event is being read");
         // There seems to be a bug while rendering these values in std out see if this happens for anything else
         uint16_t triggerNow = header.trigger_bits;
         header.trigger_bits = triggerNow & 0xffff; // FIXME
@@ -291,7 +291,7 @@ namespace DAQFormats {
         // decompressPayload(header.version_number,compressedData,decompressed_data_vector)
         if (decompressPayload(header.compressionCode,compressedData,decompressed_data_vector ))
         { 
-          INFO("Decompression Of Compressed Data Is Successful");
+          // DEBUG("Decompression Of Compressed Data Is Successful");
             uint8_t* decompressed_data = &decompressed_data_vector[0];
             updatePayloadSize(decompressed_data_vector.size());
             toggleCompression();
@@ -370,7 +370,7 @@ namespace DAQFormats {
       */
       if(this->isCompressed())
       {
-        DEBUG("raw () invoked on compressed event");
+        // DEBUG("raw () invoked on compressed event");
         full->insert(full->end(),this->compressedData.begin(),this->compressedData.end());
         return full;
       }
@@ -392,7 +392,7 @@ namespace DAQFormats {
     ~EventFull() {
       if(this->isCompressed())
       {
-        DEBUG("Since Fragments are cleared during compression Skipping that part");
+        // DEBUG("Since Fragments are cleared during compression Skipping that part");
         this->compressedData.clear();
       }
       else{
@@ -414,7 +414,7 @@ namespace DAQFormats {
     //if ((header_version_number & mask) == (zstd_mask&mask))
     if (header_compressionCode == zstd_code)
     {
-      DEBUG("Detected ZSTD Compression in Event");
+      // DEBUG("Detected ZSTD Compression in Event");
       const size_t maxDecompressedSize = ZSTD_getFrameContentSize(compressedFragments.data(), compressedFragments.size());
       if (maxDecompressedSize == ZSTD_CONTENTSIZE_ERROR || maxDecompressedSize == ZSTD_CONTENTSIZE_UNKNOWN) {
           std::cerr << "Error: Invalid compressed data" << std::endl;
@@ -436,7 +436,7 @@ namespace DAQFormats {
     //else if ((header_version_number & mask) == (zlib_mask&mask))
     else if (header_compressionCode == zlib_code)
     {
-      DEBUG("Detected Zlib Compression in Event");
+      // DEBUG("Detected Zlib Compression in Event");
       outputFragments.clear();
       uLongf decompressedSize = compressedFragments.size() * 3;
       outputFragments.resize(decompressedSize);
@@ -482,7 +482,7 @@ namespace DAQFormats {
     {
       for(const auto& frag: fragments)  // FIXME: should use smarter pointers for memory management
 	    delete frag.second;
-      DEBUG("Dealocated memory for all fragments after compression");
+      // DEBUG("Dealocated memory for all fragments after compression");
       this->compressedData.insert(this->compressedData.end(),compressedDataToLoad.begin(),compressedDataToLoad.end());
       this->updatePayloadSize(compressedData.size());
       this->toggleCompression();

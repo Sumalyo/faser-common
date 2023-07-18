@@ -94,7 +94,7 @@ using namespace nlohmann;
 configMap readJsonToMap(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Failed to open JSON file." << std::endl;
+        std::cerr << "Failed to open JSON file. " << std::endl;
         return {};
     }
 
@@ -308,11 +308,11 @@ bool ZstdCompressor::loadDictionaryFromFile(const std::string& filePath, std::ve
 
     // Get the size of the file
     file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
+    std::streamsize fileSize = file.tellg();
     file.seekg(0, std::ios::beg);
 
     // Read the file contents into the dictionary vector
-    dictionary.resize(fileSize);
+    dictionary.resize(static_cast<size_t>(fileSize));
     file.read(reinterpret_cast<char*>(dictionary.data()), fileSize);
 
     // Close the file
@@ -370,11 +370,9 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     if (this->dictionarySupport)
     {
         inputEvent.setCompressionAlgo(0x0A);
-        INFO("Using Dictionary for compression");
     }
     else{
         inputEvent.setCompressionAlgo(0x01);
-        DEBUG("Not using Dictionary compression here");
     }
     
     // Event -> Raw Fragments -> outputevent
@@ -794,7 +792,7 @@ bool lz4Compressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vecto
     int compressedSize2 = 0;
     //size_t compressedSize = 0;
     std::vector<uint8_t> outputevent;
-    size_t maxCompressedSize = LZ4_compressBound(eventFragments->size());
+    size_t maxCompressedSize = static_cast<size_t>(LZ4_compressBound(eventFragments->size()));
     outputevent_vector.resize(maxCompressedSize);
     outputevent.resize(maxCompressedSize);
     if (this->dictionarySupport)
@@ -849,8 +847,8 @@ bool lz4Compressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vecto
     }
     // Resize the compressed vector to the actual compressed size
     LZ4_freeStreamHC(lz4Stream);
-    outputevent.resize(compressedSize);
-    outputevent_vector.resize(compressedSize2);
+    outputevent.resize(static_cast<size_t>(compressedSize));
+    outputevent_vector.resize(static_cast<size_t>(compressedSize2));
     inputEvent.loadCompressedData(outputevent);
     if(this->dictionarySupport)
     {
@@ -895,7 +893,7 @@ bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vecto
     int decompressedSize = 0;
 
     // Loop until the decompressed size is not larger than the estimated size
-    while (decompressedSize <= estimatedDecompressedSize) {
+    while (static_cast<size_t>(decompressedSize) <= estimatedDecompressedSize) {
         outputFragments.resize(estimatedDecompressedSize);
 
         // Decompress the input vector
@@ -920,7 +918,7 @@ bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vecto
 
         if (decompressedSize >= 0) {
             // Decompression successful
-            outputFragments.resize(decompressedSize);
+            outputFragments.resize(static_cast<size_t>(decompressedSize));
             auto stop = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
             if (this->__isLogging && this->__isDecompressing)
@@ -932,12 +930,12 @@ bool lz4Compressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vecto
                 evData.eventHeader.status = std::to_string(static_cast<int>(inputEvent.status()^1<<11)); // dummy for compression
                 evData.eventHeader.bc = std::to_string(inputEvent.bc_id());
                 evData.eventHeader.fragmentCount = inputEvent.fragment_count();
-                evData.eventHeader.payloadSize = decompressedSize; // dummy for logging
+                evData.eventHeader.payloadSize = static_cast<uint32_t>(decompressedSize); // dummy for logging
                 evData.eventHeader.trig = std::to_string(inputEvent.trigger_bits());
                 evData.eventHeader.time = std::to_string(inputEvent.timestamp());
                 evData.inputSize = std::to_string(compressedFragments.size()); // TODO See Best Implementation
                 evData.outputSize =std::to_string(decompressedSize);
-                evData.compressionRatio =std::to_string(static_cast<double>(decompressedSize/compressedFragments.size()));
+                evData.compressionRatio =std::to_string(static_cast<double>(static_cast<size_t>(decompressedSize)/compressedFragments.size()));
                 evData.timeTaken = std::to_string(duration.count()); // Time in microseconds
                 this->addEventDataDecompressed(evData);
             }
@@ -979,7 +977,7 @@ bool brotliCompressor::setupCompression()
     }
     try
     {
-        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, this->compressionLevel);
+        BrotliEncoderSetParameter(this->state, BROTLI_PARAM_QUALITY, static_cast<uint32_t>(this->compressionLevel));
     }
     catch(const std::exception& e)
     {
