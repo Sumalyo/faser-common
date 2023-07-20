@@ -1,8 +1,0 @@
-{
-    "Compressor": "LZ4 Compressor:: Decompression Run ",
-    "Date": "29/06/2023",
-    "Filename": "/home/osboxes/faser-daq/gsoc_data/Faser-Physics-009015-00015.raw",
-    "compressorConfig": "Compressor:LZ4\ncompressionLevel:5\n",
-    "evdata": [],
-    "eventCount": 0
-}
