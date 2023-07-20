@@ -1,7 +1,6 @@
 /*
 TODO :: There are quite a lot of warnings that come up here. Not strictly adhering to FASER DAQ coding standards. Please review and fix.
 TODO :: Currently using std error. Try and use FASER Exception format
-    - Add logging capability for metrics - Done
 */
 # include "compressionlib.hpp"
 
@@ -135,11 +134,6 @@ std::string generateUniqueIdentifier() {
     std::string uniqueIdentifier = timestamp + "_" + std::to_string(randomNum);
     return uniqueIdentifier;
 }
-/*
-Event Compressor Interface
-- Add support for Compressor configuration - In HashMap
-- Add support Logging (On Demand) - Done with Structs and JSON data
-*/
 
 std::string EventCompressor::mapToString(const configMap& myMap) 
 {
@@ -149,12 +143,7 @@ std::string EventCompressor::mapToString(const configMap& myMap)
     }
     return result;
 }
-/*
-- For now the plan is to only use this to log various metrics for compression and not use the compressed Event fragment 
-- To build a new Event. The best way here seems to be by using some constrctor for EventFull that would update the framement 
-- of the event and set the appropriate fileds in the Header, return it so that it can be written to a file outout stream.
-
-*/    
+ 
 void EventCompressor::initializeStruct(std::string Filename,std::string Compressor,std::string config){
     std::time_t currentTime = std::time(nullptr);
     std::tm* localTime = std::localtime(&currentTime);
@@ -219,15 +208,15 @@ void ZstdCompressor::configCompression(configMap& config) {
 }
 bool ZstdCompressor::setupCompression()
 {
-    // ZSTD_CCtx* ctx = ZSTD_createCCtx();
+    
     if (!ctx) {
     ERROR("Error: could not create zstd compression context");
-    //std::cerr << "Error: could not create zstd compression context" << std::endl;
+   
     return false;
     }
     try
     {
-        //std::string valueOfKey1 = this->CompressorConfig["compressionLevel"];
+        
         std::string valueOfKey1 = this->CompressorConfig.at("compressionLevel");
         this->compressionLevel = std::stoi(valueOfKey1);
     }
@@ -242,7 +231,7 @@ bool ZstdCompressor::setupCompression()
     }
     try
     {
-        //std::string valueOfKey2 = this->CompressorConfig["useDictionary"];
+        
         std::string valueOfKey2 = this->CompressorConfig.at("useDictionary");
         this->dictionarySupport = std::stoi(valueOfKey2);
     }
@@ -322,14 +311,6 @@ bool ZstdCompressor::loadDictionaryFromFile(const std::string& filePath, std::ve
 }
 
 bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
-    /*
-    Steps TO DO
-    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
-    - [ ] Load the Compressor Configuration appropriately
-    - [ ] Do Compression and store result in a stream of bytes
-    - [ ] Record metrics and populate struct accordingly
-    ToDo Add dictionary based compression support
-    */
     
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
     std::vector<uint8_t> outputevent;
@@ -341,8 +322,6 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
     outputevent.resize(maxOutputSize);
     outputevent_vector.resize(maxOutputSize);
 
-    // Compress the input data and store the compressed data in the output vector
-    //int compressionLevel = std::stoi(this->CompressorConfig["compressionLevel"]); // // FIXME Bug here Please use a data member compression level and populate from there
     int compressionLevel = this->compressionLevel;
     auto start = std::chrono::high_resolution_clock::now();
     size_t compressedSize = ZSTD_compressCCtx(ctx, outputevent.data(), maxOutputSize, eventFragments->data(), eventFragments->size(), compressionLevel);
@@ -362,7 +341,7 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
         return false;
     }
      // Compress Event
-    // Resize the output vector to the actual compressed size
+     // Resize the output vector to the actual compressed size
      // Compress Event
     outputevent_vector.resize(compressedSize);
     inputEvent.loadCompressedData(outputevent);
@@ -375,12 +354,6 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
         inputEvent.setCompressionAlgo(0x01);
     }
     
-    // Event -> Raw Fragments -> outputevent
-    // 
-    // inputEvent.toggleCompression();
-    //inputEvent.updatePayloadSize(compressedSize);
-    //inputEvent.loadCompressedData(outputevent);
-
     if (this->__isLogging)
     {
         EventData evData;
@@ -403,7 +376,7 @@ bool ZstdCompressor::Compressevent  ( DAQFormats::EventFull& inputEvent, std::ve
 
     return true;
     }
-//
+
 bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
 {
     if (!this->dictionarySupport)
@@ -427,8 +400,6 @@ bool ZstdCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
     }
 
     outputFragments.resize(decompressedSize);
-    //inputEvent.toggleCompression();
-    //inputEvent.updatePayloadSize(decompressedSize);
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -529,11 +500,6 @@ void ZlibCompressor::configCompression(configMap& config) {
     this->CompressorConfig[pair.first] = pair.second;  // I can use this to set up enforcemnets later like
 
 }
-    /*
-    ?this->CompressorConfig["compressionLevel"] = config["compressionLevel"]
-    ?this->CompressorConfig["compressionLevel"] = config["compressionLevel"]
-    ?and throw exceptions if an invalid config is passed on;
-    */
 }
 bool ZlibCompressor::setupCompression()
 {
@@ -573,10 +539,7 @@ bool ZlibCompressor::setupCompression()
 }
 void ZlibCompressor::supportDecompression()
 {
-    this->__isDecompressing=true; //FIXME Add support for decompression here - Test
-    // decompressstream.zalloc = Z_NULL;
-    // decompressstream.zfree = Z_NULL;
-    // decompressstream.opaque = Z_NULL;
+    this->__isDecompressing=true; 
 }
 bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     
@@ -591,14 +554,7 @@ bool ZlibCompressor::setupCompressionAndLogging(std::string Filename){
     return isSetup;
 }
 bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
-    /*
-    Steps TO DO
-    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
-    - [ ] Load the Compressor Configuration appropriately
-    - [ ] Do Compression and store result in a stream of bytes
-    - [ ] Record metrics and populate struct accordingly
-    ToDo Add dictionary based compression support
-    */
+    
    
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
@@ -625,9 +581,7 @@ bool ZlibCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vect
         outputevent_vector.insert(outputevent_vector.end(), compressedBuffer.begin(), compressedBuffer.begin() + static_cast<long int>(compressedSize));
     } while (stream.avail_out == 0);
     inputEvent.loadCompressedData(outputevent);
-    //inputEvent.setCompressionAlgo(0x0200); // Internal Code for zlib compression
     inputEvent.setCompressionAlgo(0x02); // Internal Code for zlib compression
-    //inputEvent.updatePayloadSize(compressedSize);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     if (this->__isLogging)
@@ -693,9 +647,6 @@ bool ZlibCompressor::deCompressevent(DAQFormats::EventFull& inputEvent,std::vect
 
 ZlibCompressor::~ZlibCompressor(){
         deflateEnd(&stream);
-        //delete &stream;
-        // if (this->__isDecompressing)
-        // inflateEnd(&decompressstream);
     }
 
 void lz4Compressor::configCompression(configMap& config) {
@@ -722,7 +673,7 @@ bool lz4Compressor::setupCompression()
     }
     try
     {
-        //std::string valueOfKey2 = this->CompressorConfig["useDictionary"];
+        
         std::string valueOfKey2 = this->CompressorConfig.at("useDictionary");
         this->dictionarySupport = std::stoi(valueOfKey2);
     }
@@ -777,13 +728,6 @@ bool lz4Compressor::setupCompressionAndLogging(std::string Filename){
     return isSetup;
 }
 bool lz4Compressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
-    /*
-    Steps TO DO
-    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
-    - [ ] Load the Compressor Configuration appropriately
-    - [ ] Do Compression and store result in a stream of bytes
-    - [ ] Record metrics and populate struct accordingly
-    */
    
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
@@ -1010,14 +954,7 @@ void brotliCompressor::supportDecompression()
     this->__isDecompressing=true; 
 }
 bool brotliCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::vector<uint8_t>& outputevent_vector) {
-    /*
-    Steps TO DO
-    - [ ] Extract the Event Header information and populate the Event Data in the Logging Struct
-    - [ ] Load the Compressor Configuration appropriately
-    - [ ] Do Compression and store result in a stream of bytes
-    - [ ] Record metrics and populate struct accordingly
-    */
-   
+
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<uint8_t>* eventFragments = inputEvent.raw_fragments();
     //size_t compressedSize = 0;
@@ -1057,7 +994,7 @@ bool brotliCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::ve
     outputevent_vector.assign(outputevent.begin(),outputevent.end());
     inputEvent.loadCompressedData(outputevent);
     inputEvent.setCompressionAlgo(0x04); // Internal Code for brotli compression
-    // Populate output event vector with the same contents
+    
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     if (this->__isLogging)
     {

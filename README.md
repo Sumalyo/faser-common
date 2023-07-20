@@ -87,3 +87,26 @@ bug in it and there are corrupted events in physics stream.  Two configurations 
    
  ## Event Filtering
 A second executable [eventFilter.cxx](EventFormats/apps/eventFilter.cxx) is also compiled in the build directory at `build/EventFormats/eventFilter`.  This application reads in a raw data file and can write out a subset of the events to a new raw data file.  Currently, this application can filter on event number, trigger type, or just some total number of events.  The options can be seen with `eventFilter -h`.
+
+# Data Compression
+
+## Event Compression
+A executable [eventCompress.cxx](EventFormats/apps/eventCompress.cxx) is compiled at the build directory at `build/EventFormats/eventCompress`.
+This application adds support for data compression (using various compressors) of raw files produced during the run.  It reads in a raw data file and can write out compressed events to a file as directed.The options can be seen with `eventCompress -h`. The compressors needs to be configured with the JSON file at [compressionConfig.json](EventFormats/CompressionEngine/compressionConfig.json). This application can log performance benchmarks for analysis <br>
+**Supported Compressors**<br>
+Currently support using [ZSTD](https://github.com/facebook/zstd), [Zlib Deflate](https://github.com/madler/zlib) and [LZ4](https://github.com/lz4/lz4) are provided. 
+<br>
+**Compressor Config**
+```JSON
+{
+    "Compressor":"ZSTD", // Supports ZSTD, LZ4 and Zlib Compression
+    "compressionLevel":"5" // A Higer compression level means smaller file sizes but at the cost of Computing Resources and time
+}
+```
+**To Run**
+```bash
+cd build
+EventFormats/eventCompress -s -o compressed.raw input_raw_file.raw
+```
+### Experimental Dictionary Compression
+Currently experimnetal support for dictionary compression is provided which can be used with ZSTD and LZ4 compressors. To enable it add `"useDictionary":"1"` to the configuration JSON. To create a dictionary   
