@@ -20,6 +20,7 @@
 // #define CHUNK_SIZE 32768
 #define CHUNK_SIZE 32768
 #define ZSTD_LEVEL 15
+#define DICTIONARY_PATH "../EventFormats/CompressionEngine/eventProcess.dict"
 typedef struct EventHeader{
     std::string Event = "0x00";
     std::string run = "0x00";
@@ -81,7 +82,7 @@ public:
     ZSTD_CCtx* ctx;
     int compressionLevel;
     int dictionarySupport = 0;
-    std::string dictionaryPath = "/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/eventProcess.dict";
+    std::string dictionaryPath = DICTIONARY_PATH;
     ZstdCompressor():EventCompressor()
     {
     ctx =  ZSTD_createCCtx();
@@ -121,7 +122,7 @@ class lz4Compressor: public EventCompressor {
 public:
     int compressionLevel;
     int dictionarySupport = 0;
-    std::string dictionaryPath = "/home/osboxes/gsocContributions/faser-common/EventFormats/CompressionEngine/eventProcess.dict";
+    std::string dictionaryPath = DICTIONARY_PATH;
     std::vector<char> dictionaryData;
     lz4Compressor():EventCompressor()
     {

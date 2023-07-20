@@ -458,7 +458,7 @@ namespace DAQFormats {
     }
     return false;
     }
-    else if (header_compressionCode == zstd_dict_code || header_compressionCode == lz4_code)
+    else if (header_compressionCode == zstd_dict_code || header_compressionCode == lz4_dict_code)
     {
       ERROR("Dictionary Compression is an experimental feature.\nDecompression of Events with Dictionary based compression is not supported");
       return false;
