@@ -1056,7 +1056,7 @@ bool brotliCompressor::Compressevent( DAQFormats::EventFull& inputEvent, std::ve
     auto stop = std::chrono::high_resolution_clock::now();
     outputevent_vector.assign(outputevent.begin(),outputevent.end());
     inputEvent.loadCompressedData(outputevent);
-    inputEvent.setCompressionAlgo(0x04); // Internal Code for lz4 compression
+    inputEvent.setCompressionAlgo(0x04); // Internal Code for brotli compression
     // Populate output event vector with the same contents
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     if (this->__isLogging)

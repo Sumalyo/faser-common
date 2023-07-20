@@ -16,7 +16,8 @@
 #include <fstream>
 #include "Exceptions/Exceptions.hpp"
 #include <zstd.h>
-#include <zlib.h> 
+#include <zlib.h>
+#include <lz4hc.h> 
 #include "Logging.hpp"
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -260,8 +261,6 @@ namespace DAQFormats {
       in.read(reinterpret_cast<char *>(&header),sizeof(header));
       if (in.fail()) THROW(EFormatException,"Too small to be event");
       if (header.marker!=EventMarker) THROW(EFormatException,"Wrong event header");
-      //uint16_t mask = 0x00ff;
-      //if ((header.version_number & mask) != (EventVersionLatest & mask)) 
       if (header.version_number  != EventVersionLatest )
       {
 	    //should do conversion here
@@ -290,10 +289,8 @@ namespace DAQFormats {
             uint8_t* decompressed_data = &decompressed_data_vector[0];
             updatePayloadSize(decompressed_data_vector.size());
             toggleCompression();
-            //setCompressionAlgo(0x0100);
             setCompressionAlgo(this->header.compressionCode); // toggle it off
             dataLeft = decompressed_data_vector.size();
-            //loadPayload(decompressed_data,decompressed_data_vector.size());
             for(int fragNum=0;fragNum<header.fragment_count;fragNum++) 
             {
               EventFragment *fragment=new EventFragment(decompressed_data,dataLeft,true);
@@ -304,7 +301,6 @@ namespace DAQFormats {
               
             decompressed_data_vector.clear();
             this->compressedData.clear();
-            //delete [] decompressed_data; // ? Does this get Deallocated some where 
         }
         else{
           ERROR("DECOMPRESSION FAILED SKIPPING EVENT READ");
@@ -346,14 +342,7 @@ namespace DAQFormats {
     }
     void setCompressionAlgo(uint8_t algoCode)
     {
-        // // header.version is as 0x00 0x00 last byte is for FASER version hence that must not be altered
-        // // All Algo Code must be from 0xffff to 0x00ff
-        // if (algoCode <= 255)
-        // {
-        //   WARNING("Invalid Code Passes, Not Altering");
-        // }else{
-          header.compressionCode ^=algoCode;
-        
+      header.compressionCode ^=algoCode;  
     }
     
     /// Return full event as vector of bytes
@@ -376,7 +365,6 @@ namespace DAQFormats {
     }
 
     byteVector* raw_fragments() {
-      //const uint8_t *rawHeader=reinterpret_cast<const uint8_t *>(&header);
       byteVector* fragmentraw=new byteVector();
       for(const auto& frag: fragments) {
 	        frag.second->rawAppend(fragmentraw);
@@ -403,10 +391,11 @@ namespace DAQFormats {
      */
     bool decompressPayload(uint8_t header_compressionCode,std::vector<uint8_t>& compressedFragments, std::vector<uint8_t>& outputFragments)
   {
-    //uint16_t mask = 0xff00;
     uint8_t zstd_code = 0x01;
     uint8_t zlib_code = 0x02;
-    //if ((header_version_number & mask) == (zstd_mask&mask))
+    uint8_t lz4_code = 0x03;
+    uint8_t zstd_dict_code = 0x0A;
+    uint8_t lz4_dict_code = 0x0B;
     if (header_compressionCode == zstd_code)
     {
       // DEBUG("Detected ZSTD Compression in Event");
@@ -428,7 +417,6 @@ namespace DAQFormats {
     outputFragments.resize(decompressedSize);
     return true;
     }
-    //else if ((header_version_number & mask) == (zlib_mask&mask))
     else if (header_compressionCode == zlib_code)
     {
       // DEBUG("Detected Zlib Compression in Event");
@@ -442,6 +430,38 @@ namespace DAQFormats {
       }
       outputFragments.resize(decompressedSize);
       return true;
+    }
+    else if (header_compressionCode == lz4_code)
+    {
+     
+    const char* inputBuffer = reinterpret_cast<const char*>(compressedFragments.data());
+    size_t inputSize = compressedFragments.size();
+    size_t estimatedDecompressedSize = compressedFragments.size() * 3;
+    int decompressedSize = 0;
+
+    // Loop until the decompressed size is not larger than the estimated size
+    int MAX_RETRY = 3;
+    int retryCount = 0;
+    while (static_cast<size_t>(decompressedSize) <= estimatedDecompressedSize && retryCount < MAX_RETRY) {
+        outputFragments.resize(estimatedDecompressedSize);
+        decompressedSize = LZ4_decompress_safe(inputBuffer,
+                                               reinterpret_cast<char*>(outputFragments.data()),
+                                               inputSize,
+                                               estimatedDecompressedSize);
+        if (decompressedSize >= 0) {
+            // Decompression successful
+            outputFragments.resize(static_cast<size_t>(decompressedSize));
+            return true;
+        }
+        estimatedDecompressedSize *= 2;
+        retryCount++;
+    }
+    return false;
+    }
+    else if (header_compressionCode == zstd_dict_code || header_compressionCode == lz4_code)
+    {
+      ERROR("Dictionary Compression is an experimental feature.\nDecompression of Events with Dictionary based compression is not supported");
+      return false;
     }
     ERROR("Invalid Compression code detected");
     return false;
@@ -566,8 +586,6 @@ namespace DAQFormats {
       uint64_t timestamp;
     }  __attribute__((__packed__)) header;
     std::map<uint32_t,const EventFragment*> fragments;
-    //std::vector<uint8_t> compressedData;
-    // pointer to compressed event
   };
 
 }
